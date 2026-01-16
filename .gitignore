@@ -24,3 +24,7 @@ Thumbs.db
 
 # Claude local settings
 .claude/
+
+# Generated outputs
+outputs/
+nul

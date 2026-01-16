@@ -401,7 +401,16 @@
             return;
           }
 
-          status.textContent = "בחרי באנר מועדף:";
+          // Save extracted colors to courseData
+          if (data.extracted_colors) {
+            courseData.branding = courseData.branding || {};
+            courseData.branding.theme = courseData.branding.theme || {};
+            courseData.branding.theme.colors = data.extracted_colors;
+            localStorage.setItem("courseData", JSON.stringify(courseData));
+            console.log("Extracted colors saved:", data.extracted_colors);
+          }
+
+          status.textContent = "בחר באנר מועדף:";
           grid.classList.remove("hidden");
 
           images.forEach((url, idx) => {
@@ -409,15 +418,16 @@
             card.type = "button";
             card.className =
               "text-right p-3 rounded-2xl border border-border-color dark:border-white/10 bg-white dark:bg-black/20 hover:border-primary transition-colors flex flex-col gap-3";
-            card.onclick = () => selectBanner(url);
+            card.onclick = () => selectBanner(url, data.extracted_colors);
 
+            // Simple preview - text is baked into the image
             card.innerHTML = `
-              <div class="w-full aspect-[16/9] rounded-xl overflow-hidden bg-border-color/40 dark:bg-white/10 flex items-center justify-center">
+              <div class="banner-preview w-full aspect-[16/9] rounded-xl overflow-hidden bg-border-color/40 dark:bg-white/10">
                 <img src="${url}" alt="Banner ${idx + 1}" class="w-full h-full object-cover" />
               </div>
               <div class="flex items-center justify-between">
-                <p class="text-sm font-bold text-text-main dark:text-white">אפשרות ${idx + 1}</p>
-                <span class="text-xs text-text-muted">בחר</span>
+                <p class="text-sm font-bold text-text-main dark:text-white">באנר ${idx + 1}</p>
+                <span class="text-xs text-text-muted">לחץ לבחירה</span>
               </div>
             `;
             grid.appendChild(card);
@@ -431,7 +441,7 @@
         }
       }
 
-      function selectBanner(url) {
+      function selectBanner(url, extractedColors) {
         const saved = localStorage.getItem("courseData");
         if (!saved) return;
         const courseData = JSON.parse(saved);
@@ -439,11 +449,21 @@
         courseData.generated_assets = courseData.generated_assets || {};
         courseData.generated_assets.banner_url = url;
 
+        // Save extracted colors if provided
+        if (extractedColors) {
+          courseData.branding = courseData.branding || {};
+          courseData.branding.theme = courseData.branding.theme || {};
+          courseData.branding.theme.colors = extractedColors;
+        }
+
         localStorage.setItem("courseData", JSON.stringify(courseData));
 
         const status = document.getElementById("bannerStatus");
         status.classList.remove("hidden");
         status.textContent = "✅ באנר נבחר ונשמר. אפשר להמשיך לשלב הבא.";
+
+        // Log saved data for debugging
+        console.log("Banner selected, courseData saved:", courseData);
       }
 
       // ------------------------------------------------------------
