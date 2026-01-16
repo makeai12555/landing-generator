@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html class="light" dir="rtl" lang="he">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CourseFlow - יצירת קורס</title>
+
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;family=Noto+Sans+Hebrew:wght@400;500;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#13ecda",
+              "primary-hover": "#0ddbc9",
+              "background-light": "#f6f8f8",
+              "background-dark": "#102220",
+              "text-main": "#111817",
+              "text-muted": "#618986",
+              "border-color": "#dbe6e5",
+            },
+            fontFamily: {
+              display: ["Inter", "Noto Sans Hebrew", "sans-serif"],
+              sans: ["Inter", "Noto Sans Hebrew", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              "2xl": "1rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        font-family: "Inter", "Noto Sans Hebrew", sans-serif;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      select {
+        background-image: none !important;
+      }
+    </style>
+
+    <script>
+      // ------------------------------------------------------------
+      // Course Data Management
+      // ------------------------------------------------------------
+
+      // Global UI state for branding/logo selection
+      let logosLibrary = null;
+      let filteredLogos = [];
+      let selectedLogo = null;
+
+      function ensureBrandingDefaults(courseData) {
+        courseData.branding = courseData.branding || {};
+        courseData.branding.theme = courseData.branding.theme || {
+          theme_id: "courseflow_light_mint",
+          font_stack_id: "inter_noto",
+          palette_id: "mint",
+          mode: document.documentElement.classList.contains("dark") ? "dark" : "light",
+          overrides: { primary: null, accent: null },
+        };
+        courseData.branding.logo = courseData.branding.logo || selectedLogo || null;
+        return courseData;
+      }
+
+      function saveCourseData() {
+        const courseData = {
+          course_details: {
+            title: document.querySelector('input[name="title"]')?.value || "",
+            description: document.querySelector('textarea[name="description"]')?.value || "",
+            duration: document.querySelector('input[name="duration"]')?.value || "",
+            target_audience: document.querySelector('input[name="target_audience"]')?.value || "",
+            schedule: {
+              dates: document.querySelector('input[name="schedule_dates"]')?.value || "",
+              days: document.querySelector('input[name="schedule_days"]')?.value || "",
+              time: document.querySelector('input[name="schedule_time"]')?.value || "",
+            },
+            location: document.querySelector('input[name="location"]')?.value || "",
+          },
+          design_preferences: {
+            size: document.querySelector('select[name="size"]')?.value || "",
+            aesthetic_style: document.querySelector('select[name="aesthetic_style"]')?.value || "",
+            color_palette: document.querySelector('select[name="color_palette"]')?.value || "",
+            lighting_and_atmosphere: document.querySelector('select[name="lighting_and_atmosphere"]')?.value || "",
+            typography_style: document.querySelector('select[name="typography_style"]')?.value || "",
+            composition: document.querySelector('select[name="composition"]')?.value || "",
+            visual_inspiration: document.querySelector('textarea[name="visual_inspiration"]')?.value || "",
+          },
+          branding: {
+            logo: selectedLogo,
+            theme: {
+              theme_id: "courseflow_light_mint",
+              font_stack_id: "inter_noto",
+              palette_id: "mint",
+              mode: document.documentElement.classList.contains("dark") ? "dark" : "light",
+              overrides: { primary: null, accent: null },
+            },
+          },
+        };
+
+        localStorage.setItem("courseData", JSON.stringify(courseData));
+        return courseData;
+      }
+
+      function validateForm() {
+        const requiredFields = [
+          { name: "title", label: "שם הקורס" },
+          { name: "description", label: "תיאור הקורס" },
+          { name: "duration", label: "משך הקורס" },
+          { name: "target_audience", label: "קהל יעד" },
+          { name: "schedule_dates", label: "תאריכים" },
+          { name: "schedule_days", label: "ימים" },
+          { name: "schedule_time", label: "שעות" },
+          { name: "location", label: "מיקום" },
+        ];
+
+        for (let field of requiredFields) {
+          const element = document.querySelector(`[name="${field.name}"]`);
+          if (!element || !element.value.trim()) {
+            alert(`${field.label} הוא שדה חובה`);
+            element?.focus();
+            return false;
+          }
+        }
+        return true;
+      }
+
+      async function saveCourseAndNavigate(page) {
+        event.preventDefault();
+
+        if (!validateForm()) return;
+
+        const courseData = ensureBrandingDefaults(saveCourseData());
+
+        const button = event.target;
+        const originalHTML = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = "<span>שומר...</span>";
+
+        try {
+          const response = await fetch("/api/save-course", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              courseData,
+              isDraft: false,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error || "Failed to save course");
+          }
+
+          console.log("Course saved:", result);
+
+          localStorage.setItem("currentCourseId", result.courseId);
+          localStorage.setItem("courseSavedAt", result.savedAt);
+
+          setTimeout(() => (window.location.href = page), 300);
+        } catch (error) {
+          console.error("Error saving course:", error);
+          alert(`שגיאה בשמירת הקורס: ${error.message}\n\nהמשך בכל זאת?`);
+          setTimeout(() => (window.location.href = page), 300);
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalHTML;
+        }
+      }
+
+      async function saveDraftAndReturn() {
+        const courseData = ensureBrandingDefaults(saveCourseData());
+
+        const button = event.target;
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = "שומר...";
+
+        try {
+          await fetch("/api/save-course", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              courseData,
+              isDraft: true,
+            }),
+          });
+        } catch (error) {
+          console.error("Error saving draft:", error);
+        } finally {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+
+        setTimeout(() => (window.location.href = "index.html"), 300);
+      }
+
+      // ------------------------------------------------------------
+      // Logo Library + Modal UI
+      // ------------------------------------------------------------
+
+      async function loadLogosIfNeeded() {
+        if (logosLibrary) return;
+        const res = await fetch("/static/brand/logos.json");
+        if (!res.ok) throw new Error("Failed to load logos library");
+        logosLibrary = await res.json();
+        filteredLogos = [...logosLibrary];
+      }
+
+      function openLogoModal() {
+        const modal = document.getElementById("logoModal");
+        modal.classList.remove("hidden");
+        document.getElementById("logoSearch").value = "";
+        loadLogosIfNeeded()
+          .then(() => {
+            filteredLogos = [...logosLibrary];
+            renderLogos();
+          })
+          .catch((err) => {
+            console.error(err);
+            alert("שגיאה בטעינת ספריית הלוגואים. בדקי את logos.json");
+          });
+      }
+
+      function closeLogoModal() {
+        document.getElementById("logoModal").classList.add("hidden");
+      }
+
+      function filterLogos() {
+        const q = (document.getElementById("logoSearch").value || "").trim().toLowerCase();
+        if (!q) {
+          filteredLogos = [...logosLibrary];
+        } else {
+          filteredLogos = logosLibrary.filter((l) => {
+            const hay = `${l.name} ${(l.tags || []).join(" ")}`.toLowerCase();
+            return hay.includes(q);
+          });
+        }
+        renderLogos();
+      }
+
+      function renderLogos() {
+        const grid = document.getElementById("logosGrid");
+        const empty = document.getElementById("logosEmpty");
+        grid.innerHTML = "";
+
+        if (!filteredLogos || filteredLogos.length === 0) {
+          empty.classList.remove("hidden");
+          return;
+        }
+        empty.classList.add("hidden");
+
+        filteredLogos.forEach((logo) => {
+          const item = document.createElement("button");
+          item.type = "button";
+          item.className =
+            "text-right p-3 rounded-xl border border-border-color dark:border-white/10 bg-white dark:bg-black/20 hover:border-primary transition-colors flex flex-col gap-3";
+          item.onclick = () => selectLogo(logo);
+
+          item.innerHTML = `
+            <div class="w-full h-14 rounded-lg bg-border-color/40 dark:bg-white/10 flex items-center justify-center overflow-hidden">
+              <img src="${logo.url}" alt="${logo.name}" class="max-h-14" />
+            </div>
+            <div>
+              <p class="text-sm font-bold text-text-main dark:text-white">${logo.name}</p>
+              <p class="text-xs text-text-muted">${(logo.tags || []).slice(0, 3).join(" · ")}</p>
+            </div>
+          `;
+          grid.appendChild(item);
+        });
+      }
+
+      function selectLogo(logo) {
+        selectedLogo = {
+          id: logo.id,
+          name: logo.name,
+          url: logo.url,
+          placement: "top-right",
+          lockup: "horizontal",
+        };
+        updateLogoPreviewUI();
+        persistBrandingToLocalStorage();
+        closeLogoModal();
+      }
+
+      function clearSelectedLogo() {
+        selectedLogo = null;
+        updateLogoPreviewUI();
+        persistBrandingToLocalStorage();
+      }
+
+      function updateLogoPreviewUI() {
+        const img = document.getElementById("selectedLogoImg");
+        const empty = document.getElementById("selectedLogoEmpty");
+        const name = document.getElementById("selectedLogoName");
+
+        if (selectedLogo?.url) {
+          img.src = selectedLogo.url;
+          img.classList.remove("hidden");
+          empty.classList.add("hidden");
+          name.textContent = selectedLogo.name || "לוגו נבחר";
+        } else {
+          img.src = "";
+          img.classList.add("hidden");
+          empty.classList.remove("hidden");
+          name.textContent = "ללא לוגו";
+        }
+      }
+
+      function persistBrandingToLocalStorage() {
+        const savedData = localStorage.getItem("courseData");
+        if (!savedData) return;
+        const courseData = JSON.parse(savedData);
+
+        courseData.branding = courseData.branding || {};
+        courseData.branding.logo = selectedLogo;
+
+        courseData.branding.theme = courseData.branding.theme || {
+          theme_id: "courseflow_light_mint",
+          font_stack_id: "inter_noto",
+          palette_id: "mint",
+          mode: document.documentElement.classList.contains("dark") ? "dark" : "light",
+          overrides: { primary: null, accent: null },
+        };
+
+        localStorage.setItem("courseData", JSON.stringify(courseData));
+      }
+
+      function hydrateBrandingFromCourseData() {
+        const savedData = localStorage.getItem("courseData");
+        if (!savedData) return;
+        const courseData = JSON.parse(savedData);
+        if (courseData?.branding?.logo) {
+          selectedLogo = courseData.branding.logo;
+        }
+        updateLogoPreviewUI();
+      }
+
+      // ------------------------------------------------------------
+      // Banner Generation (calls Flask endpoint)
+      // ------------------------------------------------------------
+      async function generateBanner() {
+        if (!validateForm()) return;
+
+        const courseData = ensureBrandingDefaults(saveCourseData());
+
+        const btn = document.getElementById("generateBannerBtn");
+        const status = document.getElementById("bannerStatus");
+        const grid = document.getElementById("bannerGrid");
+
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = "מייצר...";
+
+        status.classList.remove("hidden");
+        status.textContent = "שולח בקשה ליצירת באנר...";
+        grid.classList.add("hidden");
+        grid.innerHTML = "";
+
+        try {
+          const res = await fetch("/api/generate-banner", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ courseData }),
+          });
+
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error || "Banner generation failed");
+
+          const images = data.images || [];
+          if (!images.length) {
+            status.textContent = "לא התקבלו תמונות.";
+            return;
+          }
+
+          status.textContent = "בחרי באנר מועדף:";
+          grid.classList.remove("hidden");
+
+          images.forEach((url, idx) => {
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className =
+              "text-right p-3 rounded-2xl border border-border-color dark:border-white/10 bg-white dark:bg-black/20 hover:border-primary transition-colors flex flex-col gap-3";
+            card.onclick = () => selectBanner(url);
+
+            card.innerHTML = `
+              <div class="w-full aspect-[16/9] rounded-xl overflow-hidden bg-border-color/40 dark:bg-white/10 flex items-center justify-center">
+                <img src="${url}" alt="Banner ${idx + 1}" class="w-full h-full object-cover" />
+              </div>
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-bold text-text-main dark:text-white">אפשרות ${idx + 1}</p>
+                <span class="text-xs text-text-muted">בחר</span>
+              </div>
+            `;
+            grid.appendChild(card);
+          });
+        } catch (err) {
+          console.error(err);
+          status.textContent = `שגיאה ביצירת באנר: ${err.message}`;
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = original;
+        }
+      }
+
+      function selectBanner(url) {
+        const saved = localStorage.getItem("courseData");
+        if (!saved) return;
+        const courseData = JSON.parse(saved);
+
+        courseData.generated_assets = courseData.generated_assets || {};
+        courseData.generated_assets.banner_url = url;
+
+        localStorage.setItem("courseData", JSON.stringify(courseData));
+
+        const status = document.getElementById("bannerStatus");
+        status.classList.remove("hidden");
+        status.textContent = "✅ באנר נבחר ונשמר. אפשר להמשיך לשלב הבא.";
+      }
+
+      // ------------------------------------------------------------
+      // Load data when page loads
+      // ------------------------------------------------------------
+      window.addEventListener("DOMContentLoaded", function () {
+        const defaultSize = document.querySelector('select[name="size"]').value;
+        const defaultAesthetic = document.querySelector('select[name="aesthetic_style"]').value;
+        const defaultColor = document.querySelector('select[name="color_palette"]').value;
+        const defaultLighting = document.querySelector('select[name="lighting_and_atmosphere"]').value;
+        const defaultTypography = document.querySelector('select[name="typography_style"]').value;
+        const defaultComposition = document.querySelector('select[name="composition"]').value;
+
+        const savedData = localStorage.getItem("courseData");
+        if (savedData) {
+          const courseData = JSON.parse(savedData);
+
+          if (courseData.course_details) {
+            document.querySelector('input[name="title"]').value = courseData.course_details.title || "";
+            document.querySelector('textarea[name="description"]').value = courseData.course_details.description || "";
+            document.querySelector('input[name="duration"]').value = courseData.course_details.duration || "";
+            document.querySelector('input[name="target_audience"]').value = courseData.course_details.target_audience || "";
+            document.querySelector('input[name="schedule_dates"]').value = courseData.course_details.schedule?.dates || "";
+            document.querySelector('input[name="schedule_days"]').value = courseData.course_details.schedule?.days || "";
+            document.querySelector('input[name="schedule_time"]').value = courseData.course_details.schedule?.time || "";
+            document.querySelector('input[name="location"]').value = courseData.course_details.location || "";
+          }
+
+          if (courseData.design_preferences) {
+            document.querySelector('select[name="size"]').value = courseData.design_preferences.size || defaultSize;
+            document.querySelector('select[name="aesthetic_style"]').value =
+              courseData.design_preferences.aesthetic_style || defaultAesthetic;
+            document.querySelector('select[name="color_palette"]').value = courseData.design_preferences.color_palette || defaultColor;
+            document.querySelector('select[name="lighting_and_atmosphere"]').value =
+              courseData.design_preferences.lighting_and_atmosphere || defaultLighting;
+            document.querySelector('select[name="typography_style"]').value =
+              courseData.design_preferences.typography_style || defaultTypography;
+            document.querySelector('select[name="composition"]').value = courseData.design_preferences.composition || defaultComposition;
+            document.querySelector('textarea[name="visual_inspiration"]').value =
+              courseData.design_preferences.visual_inspiration || "";
+          }
+        } else {
+          const courseData = {
+            course_details: {
+              title: "",
+              description: "",
+              duration: "",
+              target_audience: "",
+              schedule: { dates: "", days: "", time: "" },
+              location: "",
+            },
+            design_preferences: {
+              size: defaultSize,
+              aesthetic_style: defaultAesthetic,
+              color_palette: defaultColor,
+              lighting_and_atmosphere: defaultLighting,
+              typography_style: defaultTypography,
+              composition: defaultComposition,
+              visual_inspiration: "",
+            },
+            branding: {
+              logo: null,
+              theme: {
+                theme_id: "courseflow_light_mint",
+                font_stack_id: "inter_noto",
+                palette_id: "mint",
+                mode: document.documentElement.classList.contains("dark") ? "dark" : "light",
+                overrides: { primary: null, accent: null },
+              },
+            },
+          };
+          localStorage.setItem("courseData", JSON.stringify(courseData));
+        }
+
+        hydrateBrandingFromCourseData();
+      });
+    </script>
+  </head>
+
+  <body class="bg-background-light dark:bg-background-dark text-text-main dark:text-white min-h-screen flex flex-col">
+    <header
+      class="sticky top-0 z-50 bg-white dark:bg-[#1a2e2c] border-b border-border-color dark:border-white/10 px-6 py-3 shadow-sm"
+    >
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-4 text-text-main dark:text-white">
+          <div class="size-8 text-primary">
+            <svg class="w-full h-full" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <path
+                clip-rule="evenodd"
+                d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
+                fill="currentColor"
+                fill-rule="evenodd"
+              ></path>
+            </svg>
+          </div>
+          <h2 class="text-xl font-bold tracking-tight">CourseFlow</h2>
+        </div>
+        <div class="flex items-center gap-6">
+          <button class="hidden md:flex items-center gap-2 text-text-muted hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">help</span>
+            <span class="text-sm font-medium">עזרה</span>
+          </button>
+          <div class="flex items-center gap-3 pl-2 border-l border-border-color dark:border-white/10">
+            <div class="text-left hidden sm:block">
+              <p class="text-sm font-bold leading-none text-text-main dark:text-white">דניאל כהן</p>
+              <p class="text-xs text-text-muted">מרצה בכיר</p>
+            </div>
+            <div
+              class="bg-center bg-no-repeat bg-cover rounded-full size-10 ring-2 ring-primary/20"
+              data-alt="User profile picture of a smiling man"
+              style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDFlmiMQsjoQcEEXNiITz2HNtW23u97QW6NiB42lV9rAxivzWn-h9pUmEAuikg83y_KT2j9ZXP1A0UGvV8GjowmP1cRQJK-MyU0cl2SqhCe-Vs7terntW-XI-r_rrjsK6mgcAzf-ZsqG5lvnZoybdAur_Pkb98Vfo6dDd_rKeJiuLRlkjtN_5wfNucjbyBi6rRBITyb3wwxu30GEGB-j7NVykS_MbLatVPyFNiSZyve6Ivr-dvtFuwYzWUa7SrTjk4OPluGjB707cg7");'
+            ></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mb-10 max-w-4xl mx-auto">
+        <div class="flex flex-col gap-3">
+          <div class="flex justify-between items-end">
+            <div>
+              <p class="text-text-main dark:text-white text-lg font-bold">יצירת קורס חדש</p>
+              <p class="text-text-muted text-sm">שלב 1 מתוך 2: מידע בסיסי</p>
+            </div>
+            <span class="text-primary text-sm font-bold">50%</span>
+          </div>
+          <div class="h-2 w-full bg-border-color dark:bg-white/10 rounded-full overflow-hidden">
+            <div class="h-full bg-primary rounded-full" style="width: 50%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+        <div class="flex-1 w-full lg:w-2/3 space-y-8">
+          <form class="space-y-8">
+            <div class="bg-white dark:bg-[#1a2e2c] rounded-2xl p-6 sm:p-8 shadow-sm border border-border-color dark:border-white/5">
+              <div class="mb-8">
+                <h1 class="text-2xl font-bold text-text-main dark:text-white mb-2">פרטי הקורס</h1>
+                <p class="text-text-muted">מלא את הפרטים הבסיסיים של הקורס. פרטים אלו יופיעו בדף הקורס ובחומרי השיווק.</p>
+              </div>
+
+              <div class="space-y-6">
+                <label class="flex flex-col gap-2">
+                  <span class="text-sm font-semibold text-text-main dark:text-white">שם הקורס <span class="text-red-500">*</span></span>
+                  <input
+                    class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+                    name="title"
+                    placeholder="למשל: יסודות העיצוב הגרפי"
+                    required=""
+                    type="text"
+                  />
+                </label>
+
+                <label class="flex flex-col gap-2">
+                  <span class="text-sm font-semibold text-text-main dark:text-white">תיאור הקורס <span class="text-red-500">*</span></span>
+                  <textarea
+                    class="w-full p-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none placeholder:text-text-muted/50"
+                    name="description"
+                    placeholder="פרט על מה נלמד בקורס, למי הוא מתאים ומה הערך המוסף..."
+                    rows="4"
+                    required=""
+                  ></textarea>
+                </label>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">משך הקורס <span class="text-red-500">*</span></span>
+                    <input
+                      class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+                      name="duration"
+                      placeholder="למשל: 10 שבועות, 60 שעות"
+                      type="text"
+                      required=""
+                    />
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">קהל יעד <span class="text-red-500">*</span></span>
+                    <input
+                      class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+                      name="target_audience"
+                      placeholder="למשל: מעצבים מתחילים, בעלי עסקים"
+                      type="text"
+                      required=""
+                    />
+                  </label>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">תאריכים <span class="text-red-500">*</span></span>
+                    <input
+                      class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+                      name="schedule_dates"
+                      placeholder="למשל: 15.1.2025 - 30.3.2025"
+                      type="text"
+                      required=""
+                    />
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">ימים <span class="text-red-500">*</span></span>
+                    <input
+                      class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+                      name="schedule_days"
+                      placeholder="למשל: ימי ראשון וחמישי"
+                      type="text"
+                      required=""
+                    />
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">שעות <span class="text-red-500">*</span></span>
+                    <input
+                      class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+                      name="schedule_time"
+                      placeholder="למשל: 18:00-21:00"
+                      type="text"
+                      required=""
+                    />
+                  </label>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6">
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">מיקום <span class="text-red-500">*</span></span>
+                    <input
+                      class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+                      name="location"
+                      placeholder="למשל: זום / תל אביב, דרך בגין 12"
+                      type="text"
+                      required=""
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white dark:bg-[#1a2e2c] rounded-2xl p-6 sm:p-8 shadow-sm border border-border-color dark:border-white/5">
+              <div class="mb-8">
+                <h2 class="text-xl font-bold text-text-main dark:text-white mb-2">העדפות עיצוב</h2>
+                <p class="text-sm text-text-muted">הגדר את הסגנון הוויזואלי הרצוי לחומרי השיווק של הקורס.</p>
+              </div>
+
+              <div class="space-y-6">
+                <!-- Logo Picker -->
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">לוגו</span>
+                    <button
+                      type="button"
+                      class="text-sm font-bold text-primary hover:text-primary-hover transition-colors"
+                      onclick="openLogoModal()"
+                    >
+                      בחר לוגו מספרייה
+                    </button>
+                  </div>
+
+                  <div
+                    id="selectedLogoPreview"
+                    class="flex items-center justify-between gap-4 p-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-16 h-10 rounded-md bg-border-color/40 dark:bg-white/10 flex items-center justify-center overflow-hidden"
+                      >
+                        <img id="selectedLogoImg" src="" alt="" class="hidden max-h-10" />
+                        <span id="selectedLogoEmpty" class="text-xs text-text-muted">לא נבחר לוגו</span>
+                      </div>
+                      <div>
+                        <p id="selectedLogoName" class="text-sm font-bold text-text-main dark:text-white">ללא לוגו</p>
+                        <p class="text-xs text-text-muted">הלוגו יוטמע בבאנר ובדף הנחיתה</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="px-4 h-10 rounded-lg border border-border-color text-text-muted hover:text-text-main hover:border-text-main font-medium transition-colors"
+                      onclick="clearSelectedLogo()"
+                    >
+                      נקה
+                    </button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">גודל / פורמט</span>
+                    <div class="relative">
+                      <select
+                        class="w-full h-12 px-4 pl-10 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                        name="size"
+                      >
+                        <option value="instagram_square">פוסט מרובע (1:1)</option>
+                        <option selected="" value="instagram_story">סטורי (9:16)</option>
+                        <option value="a4_flyer">פלייר A4</option>
+                        <option value="youtube_thumbnail">תמונה ליוטיוב (16:9)</option>
+                      </select>
+                      <span class="material-symbols-outlined absolute left-3 top-3 text-text-muted pointer-events-none"
+                        >expand_more</span
+                      >
+                    </div>
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">סגנון אסתטי</span>
+                    <div class="relative">
+                      <select
+                        class="w-full h-12 px-4 pl-10 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                        name="aesthetic_style"
+                      >
+                        <option value="minimalist">מינימליסטי ונקי</option>
+                        <option selected="" value="modern_tech">הייטקי ומודרני</option>
+                        <option value="luxury">יוקרתי ואלגנטי</option>
+                        <option value="retro">רטרו / וינטג'</option>
+                        <option value="playful">שמח וצבעוני</option>
+                      </select>
+                      <span class="material-symbols-outlined absolute left-3 top-3 text-text-muted pointer-events-none"
+                        >expand_more</span
+                      >
+                    </div>
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">פלטת צבעים</span>
+                    <div class="relative">
+                      <select
+                        class="w-full h-12 px-4 pl-10 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                        name="color_palette"
+                      >
+                        <option value="brand_colors">בהתאם למותג</option>
+                        <option selected="" value="light_airy">בהיר ואוורירי</option>
+                        <option value="dark_mode">כהה ודרמטי</option>
+                        <option value="pastel">צבעי פסטל</option>
+                        <option value="vibrant">נועז ורווי</option>
+                      </select>
+                      <span class="material-symbols-outlined absolute left-3 top-3 text-text-muted pointer-events-none"
+                        >expand_more</span
+                      >
+                    </div>
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">תאורה ואווירה</span>
+                    <div class="relative">
+                      <select
+                        class="w-full h-12 px-4 pl-10 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                        name="lighting_and_atmosphere"
+                      >
+                        <option selected="" value="natural_light">אור יום טבעי</option>
+                        <option value="studio">תאורת אולפן</option>
+                        <option value="warm">חמימה וביתית</option>
+                        <option value="neon">ניאון / עתידני</option>
+                        <option value="soft">רכה ונעימה</option>
+                      </select>
+                      <span class="material-symbols-outlined absolute left-3 top-3 text-text-muted pointer-events-none"
+                        >expand_more</span
+                      >
+                    </div>
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">סגנון טיפוגרפי</span>
+                    <div class="relative">
+                      <select
+                        class="w-full h-12 px-4 pl-10 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                        name="typography_style"
+                      >
+                        <option selected="" value="modern_sans">מודרני (Sans Serif)</option>
+                        <option value="classic_serif">קלאסי (Serif)</option>
+                        <option value="bold_display">בולט וחזק</option>
+                        <option value="handwritten">כתב יד</option>
+                      </select>
+                      <span class="material-symbols-outlined absolute left-3 top-3 text-text-muted pointer-events-none"
+                        >expand_more</span
+                      >
+                    </div>
+                  </label>
+
+                  <label class="flex flex-col gap-2">
+                    <span class="text-sm font-semibold text-text-main dark:text-white">קומפוזיציה</span>
+                    <div class="relative">
+                      <select
+                        class="w-full h-12 px-4 pl-10 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                        name="composition"
+                      >
+                        <option selected="" value="balanced">מאוזנת</option>
+                        <option value="centered">מרוכזת</option>
+                        <option value="asymmetric">אסימטרית</option>
+                        <option value="minimal">מינימליסטית</option>
+                        <option value="collage">קולאז' / עמוס</option>
+                      </select>
+                      <span class="material-symbols-outlined absolute left-3 top-3 text-text-muted pointer-events-none"
+                        >expand_more</span
+                      >
+                    </div>
+                  </label>
+                </div>
+
+                <label class="flex flex-col gap-2">
+                  <span class="text-sm font-semibold text-text-main dark:text-white">השראה ויזואלית</span>
+                  <textarea
+                    class="w-full p-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none placeholder:text-text-muted/50"
+                    name="visual_inspiration"
+                    placeholder="תאר תמונה, סגנון או אווירה שנותנים לך השראה לעיצוב הקורס..."
+                    rows="3"
+                  ></textarea>
+                </label>
+
+                <!-- Banner Generation -->
+                <div class="pt-2 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-semibold text-text-main dark:text-white">באנר (NanoBanana)</p>
+                    <button
+                      id="generateBannerBtn"
+                      type="button"
+                      class="px-5 h-11 bg-primary hover:bg-primary-hover text-[#111817] text-sm font-bold rounded-lg shadow-sm shadow-primary/20 transition-all transform active:scale-95"
+                      onclick="generateBanner()"
+                    >
+                      Generate Banner
+                    </button>
+                  </div>
+
+                  <p class="text-xs text-text-muted">ניצור מספר וריאציות של באנר לפי פרטי הקורס + לוגו + סגנון.</p>
+
+                  <div id="bannerStatus" class="hidden text-sm text-text-muted"></div>
+                  <div id="bannerGrid" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+              <button
+                class="w-full sm:w-auto px-6 h-12 rounded-lg border border-border-color text-text-muted hover:text-text-main hover:border-text-main font-medium transition-colors cursor-pointer"
+                onclick="saveDraftAndReturn()"
+                type="button"
+              >
+                שמור טיוטה
+              </button>
+              <button
+                class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 h-12 bg-primary hover:bg-primary-hover text-[#111817] text-base font-bold rounded-lg shadow-sm shadow-primary/20 transition-all transform active:scale-95"
+                onclick="saveCourseAndNavigate('success.html')"
+                type="button"
+              >
+                <span>הבא לשלב 2: דף נחיתה</span>
+                <span class="material-symbols-outlined rtl:rotate-180">arrow_forward</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <!-- Logo Modal -->
+    <div id="logoModal" class="fixed inset-0 z-[999] hidden">
+      <div class="absolute inset-0 bg-black/50" onclick="closeLogoModal()"></div>
+
+      <div
+        class="relative max-w-3xl mx-auto mt-16 bg-white dark:bg-[#1a2e2c] rounded-2xl shadow-lg border border-border-color dark:border-white/10 overflow-hidden"
+      >
+        <div class="p-5 border-b border-border-color dark:border-white/10 flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-text-main dark:text-white">בחר לוגו</h3>
+            <p class="text-sm text-text-muted">בחר מתוך הספרייה. ניתן לחפש לפי שם או תגיות.</p>
+          </div>
+          <button type="button" class="text-text-muted hover:text-text-main" onclick="closeLogoModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="p-5">
+          <input
+            id="logoSearch"
+            type="text"
+            placeholder="חיפוש לוגו..."
+            class="w-full h-12 px-4 rounded-lg border border-border-color bg-white dark:bg-black/20 dark:border-white/10 text-text-main dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-text-muted/50"
+            oninput="filterLogos()"
+          />
+
+          <div id="logosGrid" class="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+          <div id="logosEmpty" class="mt-6 hidden text-sm text-text-muted">לא נמצאו לוגואים.</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
