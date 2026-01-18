@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import base64
+import uuid
 from pathlib import Path
 from datetime import datetime, timezone
 from io import BytesIO
@@ -144,6 +145,36 @@ def image_to_base64_url(img: Image.Image) -> str:
     return f"data:image/png;base64,{b64}"
 
 
+def build_background_prompt(course_data: dict) -> str:
+    """Build prompt for clean background image (no text)."""
+    details = course_data.get("course_details", {})
+    design = course_data.get("design_preferences", {})
+
+    title = details.get('title', 'Course')
+    description = details.get('description', '')[:100]
+
+    return f"""Create a beautiful, professional background image for a course landing page.
+
+TOPIC: {title}
+CONTEXT: {description}
+
+DESIGN REQUIREMENTS:
+- Style: {design.get('aesthetic_style', 'modern professional')}
+- Color scheme: {design.get('color_palette', 'professional colors')}
+- Lighting: {design.get('lighting_and_atmosphere', 'bright and inviting')}
+- 16:9 aspect ratio
+
+CRITICAL RULES:
+- DO NOT include ANY text, letters, words, or typography
+- DO NOT include any buttons, UI elements, or overlays
+- Create ONLY a pure visual background image
+- The image should represent the course topic through imagery alone
+- Leave space for text to be overlaid later (consider composition)
+- Make it visually appealing and professional
+- Soft focus or gradient areas are good for text placement
+"""
+
+
 def build_english_prompt(course_data: dict, has_logo: bool) -> str:
     """Build the English prompt for step 1 (locks composition)."""
     details = course_data.get("course_details", {})
@@ -235,10 +266,38 @@ FINAL CHECK:
 """
 
 
-def generate_banner_with_hebrew(course_data: dict, logo_img: Image.Image | None = None) -> str | None:
-    """Generate banner using 2-step approach: EN generation -> HE edit."""
+def generate_banner_with_hebrew(course_data: dict, logo_img: Image.Image | None = None) -> dict | None:
+    """Generate banner using 3-step approach: clean background -> EN banner -> HE edit.
+
+    Returns dict with:
+        - banner: Hebrew banner (full with text)
+        - background: Clean image without text (for landing page hero)
+    """
 
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+    # Step 0: Create clean background (no text) for landing page
+    logger.info("Step 0: Creating clean background image...")
+
+    prompt_bg = build_background_prompt(course_data)
+
+    response_bg = client.models.generate_content(
+        model=MODEL,
+        contents=[types.Content(parts=[types.Part(text=prompt_bg)])],
+        config=types.GenerateContentConfig(
+            response_modalities=["IMAGE"],
+            image_config=types.ImageConfig(aspect_ratio="16:9"),
+        ),
+    )
+
+    img_bg = extract_image_from_response(response_bg)
+    background_url = None
+
+    if img_bg:
+        background_url = image_to_base64_url(img_bg)
+        logger.info("Step 0 complete: Clean background generated")
+    else:
+        logger.warning("Failed to generate clean background, will use EN banner as fallback")
 
     # Step 1: Create EN banner (locks composition)
     logger.info("Step 1: Creating English banner...")
@@ -275,6 +334,10 @@ def generate_banner_with_hebrew(course_data: dict, logo_img: Image.Image | None 
 
     logger.info("Step 1 complete: English banner generated")
 
+    # Use EN banner as fallback background if clean background failed
+    if not background_url:
+        background_url = image_to_base64_url(img_en)
+
     # Step 2: Edit to Hebrew
     logger.info("Step 2: Editing to Hebrew...")
 
@@ -301,11 +364,17 @@ def generate_banner_with_hebrew(course_data: dict, logo_img: Image.Image | None 
     img_he = extract_image_from_response(response_he)
 
     if not img_he:
-        logger.error("Failed to edit to Hebrew, returning English version")
-        return image_to_base64_url(img_en)
+        logger.error("Failed to edit to Hebrew, returning English version for both")
+        return {
+            "banner": background_url,
+            "background": background_url
+        }
 
     logger.info("Step 2 complete: Hebrew banner generated")
-    return image_to_base64_url(img_he)
+    return {
+        "banner": image_to_base64_url(img_he),
+        "background": background_url
+    }
 
 
 @app.get("/")
@@ -351,34 +420,186 @@ def generate_banner():
             logger.warning(f"Failed to load logo: {logo_url}")
 
     # Generate banners (currently just 1 variation with 2-step approach)
-    images = []
-
     try:
-        img = generate_banner_with_hebrew(course_data, logo_img)
-        if img:
-            images.append(img)
-            logger.info("Generated Hebrew banner successfully")
+        result = generate_banner_with_hebrew(course_data, logo_img)
+        if not result:
+            return jsonify({"success": False, "error": "Failed to generate images"}), 500
+        logger.info("Generated Hebrew banner successfully")
     except Exception as e:
         logger.error(f"Banner generation failed: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-    if not images:
-        return jsonify({"success": False, "error": "Failed to generate images"}), 500
-
-    # Extract color palette from first image
+    # Extract color palette from banner
     extracted_colors = None
-    if images:
-        first_image_data = images[0].split(",")[1] if "," in images[0] else images[0]
-        extracted_colors = extract_palette_from_image(first_image_data)
-        if extracted_colors:
-            logger.info(f"Extracted colors: {extracted_colors}")
+    banner_data = result["banner"].split(",")[1] if "," in result["banner"] else result["banner"]
+    extracted_colors = extract_palette_from_image(banner_data)
+    if extracted_colors:
+        logger.info(f"Extracted colors: {extracted_colors}")
 
     return jsonify({
         "success": True,
-        "images": images,
+        "images": [result["banner"]],  # Keep array for backward compatibility
+        "background_url": result["background"],  # English image for landing page
         "extracted_colors": extracted_colors,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "courseData": course_data
+    })
+
+
+# In-memory storage for landing pages (will be replaced with DB later)
+landing_pages = {}
+
+
+@app.get("/landing-config")
+def landing_config():
+    """Step 2: Landing page configuration."""
+    return render_template("landing_config.html")
+
+
+@app.post("/api/create-landing")
+def create_landing():
+    """Create a landing page from course data."""
+    payload = request.get_json(silent=True) or {}
+    course_data = payload.get("courseData") or {}
+
+    logger.info("=== CREATE LANDING PAGE ===")
+    logger.info(json.dumps(course_data, indent=2, ensure_ascii=False))
+
+    # Generate unique ID
+    landing_id = str(uuid.uuid4())[:8]
+
+    # Extract data for Apps Script
+    details = course_data.get("course_details", {})
+    assets = course_data.get("generated_assets", {})
+    branding = course_data.get("branding", {})
+    landing_config = course_data.get("landing_config", {})
+    colors = branding.get("theme", {}).get("colors", {})
+
+    # Build landing data for Apps Script
+    landing_data = {
+        "action": "createLanding",
+        "id": landing_id,
+        "course": {
+            "title": details.get("title", ""),
+            "description": details.get("description", ""),
+            "extendedDescription": landing_config.get("extended_description", ""),
+            "schedule": details.get("schedule", {}),
+            "location": details.get("location", ""),
+            "duration": details.get("duration", ""),
+            "targetAudience": details.get("target_audience", ""),
+        },
+        "assets": {
+            "backgroundUrl": assets.get("background_url", ""),
+            "bannerUrl": assets.get("banner_url", ""),
+        },
+        "theme": {
+            "primary": colors.get("primary", "#FFD700"),
+            "accent": colors.get("accent", "#1a1a2e"),
+        },
+        "form": {
+            "requiresInterview": landing_config.get("requires_interview", False),
+            "referralOptions": landing_config.get("referral_options", []),
+        },
+    }
+
+    # Send to Apps Script
+    apps_script_url = os.environ.get("APPS_SCRIPT_URL")
+    if apps_script_url:
+        try:
+            resp = requests.post(
+                apps_script_url,
+                json=landing_data,
+                headers={"Content-Type": "application/json"},
+                timeout=30,
+            )
+            result = resp.json()
+            logger.info(f"Apps Script response: {result}")
+            if not result.get("success"):
+                logger.error(f"Apps Script error: {result}")
+        except Exception as e:
+            logger.error(f"Failed to send to Apps Script: {e}")
+
+    # Also store locally for Flask landing page fallback
+    landing_pages[landing_id] = {
+        "course_data": course_data,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    logger.info(f"Created landing page: {landing_id}")
+
+    # Return URL to Next.js landing page
+    nextjs_base = os.environ.get("NEXTJS_BASE_URL", "http://localhost:3000")
+    return jsonify({
+        "success": True,
+        "landingId": landing_id,
+        "url": f"{nextjs_base}/l/{landing_id}",
+    })
+
+
+@app.get("/landing/<landing_id>")
+def view_landing(landing_id: str):
+    """View a landing page."""
+    # Try to get from in-memory storage
+    landing_data = landing_pages.get(landing_id)
+
+    if not landing_data:
+        # For demo: return empty template with message
+        return render_template(
+            "landing.html",
+            landing_id=landing_id,
+            course={
+                "title": "דף לא נמצא",
+                "description": "דף הנחיתה לא נמצא. ייתכן שפג תוקפו.",
+                "schedule": {},
+            },
+            background_url=None,
+            colors={},
+            requires_interview=False,
+            referral_options=[],
+        )
+
+    course_data = landing_data["course_data"]
+    details = course_data.get("course_details", {})
+    assets = course_data.get("generated_assets", {})
+    branding = course_data.get("branding", {})
+    landing_config = course_data.get("landing_config", {})
+
+    # Extract colors from theme
+    colors = branding.get("theme", {}).get("colors", {})
+
+    return render_template(
+        "landing.html",
+        landing_id=landing_id,
+        course={
+            "title": details.get("title", ""),
+            "description": details.get("description", ""),
+            "duration": details.get("duration", ""),
+            "target_audience": details.get("target_audience", ""),
+            "location": details.get("location", ""),
+            "schedule": details.get("schedule", {}),
+        },
+        background_url=assets.get("background_url"),
+        colors=colors,
+        extended_description=landing_config.get("extended_description", ""),
+        requires_interview=landing_config.get("requires_interview", False),
+        referral_options=landing_config.get("referral_options", ["חבר/ה", "פייסבוק", "גוגל", "אחר"]),
+    )
+
+
+@app.post("/api/register")
+def register():
+    """Handle registration form submission (placeholder)."""
+    data = request.get_json(silent=True) or {}
+
+    logger.info("=== REGISTRATION RECEIVED ===")
+    logger.info(json.dumps(data, indent=2, ensure_ascii=False))
+
+    # For now, just log and return success
+    # Later: save to Google Sheets
+    return jsonify({
+        "success": True,
+        "message": "Registration received",
+        "data": data,
     })
 
 

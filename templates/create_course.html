@@ -87,6 +87,9 @@
       }
 
       function saveCourseData() {
+        // Load existing data to preserve generated_assets
+        const existingData = JSON.parse(localStorage.getItem("courseData") || "{}");
+
         const courseData = {
           course_details: {
             title: document.querySelector('input[name="title"]')?.value || "",
@@ -111,7 +114,7 @@
           },
           branding: {
             logo: selectedLogo,
-            theme: {
+            theme: existingData.branding?.theme || {
               theme_id: "courseflow_light_mint",
               font_stack_id: "inter_noto",
               palette_id: "mint",
@@ -119,6 +122,8 @@
               overrides: { primary: null, accent: null },
             },
           },
+          // Preserve generated assets (banner, background)
+          generated_assets: existingData.generated_assets || {},
         };
 
         localStorage.setItem("courseData", JSON.stringify(courseData));
@@ -401,14 +406,21 @@
             return;
           }
 
-          // Save extracted colors to courseData
+          // Save extracted colors and background URL to courseData
           if (data.extracted_colors) {
             courseData.branding = courseData.branding || {};
             courseData.branding.theme = courseData.branding.theme || {};
             courseData.branding.theme.colors = data.extracted_colors;
-            localStorage.setItem("courseData", JSON.stringify(courseData));
-            console.log("Extracted colors saved:", data.extracted_colors);
           }
+
+          // Save background URL for landing page
+          if (data.background_url) {
+            courseData.generated_assets = courseData.generated_assets || {};
+            courseData.generated_assets.background_url = data.background_url;
+          }
+
+          localStorage.setItem("courseData", JSON.stringify(courseData));
+          console.log("Extracted colors and background saved:", data.extracted_colors);
 
           status.textContent = "בחר באנר מועדף:";
           grid.classList.remove("hidden");
@@ -906,7 +918,7 @@
               </button>
               <button
                 class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 h-12 bg-primary hover:bg-primary-hover text-[#111817] text-base font-bold rounded-lg shadow-sm shadow-primary/20 transition-all transform active:scale-95"
-                onclick="saveCourseAndNavigate('success.html')"
+                onclick="saveCourseAndNavigate('/landing-config')"
                 type="button"
               >
                 <span>הבא לשלב 2: דף נחיתה</span>
