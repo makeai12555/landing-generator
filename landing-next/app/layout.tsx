@@ -36,6 +36,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${notoSansHebrew.variable} antialiased bg-gray-50 text-gray-900 min-h-screen`}
         style={{ fontFamily: "var(--font-inter), var(--font-noto-hebrew), sans-serif" }}
+        suppressHydrationWarning
       >
         {children}
       </body>

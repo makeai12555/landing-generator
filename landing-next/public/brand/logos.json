@@ -1,0 +1,14 @@
+[
+  {
+    "id": "jerusalem_city",
+    "name": "עיריית ירושלים",
+    "url": "/brand/logos/jerusalem_city.svg",
+    "tags": ["עירייה", "ירושלים"]
+  },
+  {
+    "id": "shivion",
+    "name": "שוויון",
+    "url": "/brand/logos/shivion.svg",
+    "tags": ["חינוך", "שוויון"]
+  }
+]

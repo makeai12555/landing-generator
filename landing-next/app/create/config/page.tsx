@@ -1,0 +1,331 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import type { CourseData } from "@/types/course";
+import { defaultCourseData } from "@/types/course";
+import { BannerPreview } from "@/components/course";
+
+const STORAGE_KEY = "courseData";
+
+export default function LandingConfigPage() {
+  const router = useRouter();
+  const [courseData, setCourseData] = useState<CourseData | null>(null);
+  const [extendedDescription, setExtendedDescription] = useState("");
+  const [requiresInterview, setRequiresInterview] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      alert("לא נמצאו נתוני קורס. חזור לשלב 1.");
+      router.push("/create");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(saved);
+      const data = { ...defaultCourseData, ...parsed };
+      setCourseData(data);
+
+      // Load landing config if exists
+      if (data.landing_config) {
+        setExtendedDescription(data.landing_config.extended_description || "");
+        setRequiresInterview(data.landing_config.requires_interview || false);
+      }
+    } catch (e) {
+      console.error("Failed to parse saved course data:", e);
+      router.push("/create");
+    }
+  }, [router]);
+
+  const updateLandingConfig = () => {
+    if (!courseData) return;
+
+    const updated = {
+      ...courseData,
+      landing_config: {
+        extended_description: extendedDescription,
+        requires_interview: requiresInterview,
+        referral_options: ["חבר/ה", "פייסבוק", "גוגל", "אחר"],
+      },
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setCourseData(updated);
+  };
+
+  const createLandingPage = async () => {
+    if (!courseData) return;
+
+    updateLandingConfig();
+    setIsCreating(true);
+
+    try {
+      const response = await fetch("/api/create-landing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseData: {
+            ...courseData,
+            landing_config: {
+              extended_description: extendedDescription,
+              requires_interview: requiresInterview,
+              referral_options: ["חבר/ה", "פייסבוק", "גוגל", "אחר"],
+            },
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create landing page");
+      }
+
+      // Save landing page ID
+      localStorage.setItem("landingPageId", result.landingId);
+
+      // Navigate to landing page
+      router.push(`/l/${result.landingId}`);
+    } catch (error) {
+      console.error("Error creating landing page:", error);
+      alert(
+        `שגיאה ביצירת דף נחיתה: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+      setIsCreating(false);
+    }
+  };
+
+  if (!courseData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const details = courseData.course_details;
+  const assets = courseData.generated_assets;
+
+  return (
+    <>
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-3 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4 text-gray-900">
+            <div className="w-8 h-8 text-primary">
+              <svg
+                className="w-full h-full"
+                fill="none"
+                viewBox="0 0 48 48"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clipRule="evenodd"
+                  d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
+                  fill="currentColor"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold tracking-tight">CourseFlow</h2>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Progress Bar */}
+        <div className="mb-10 max-w-4xl mx-auto">
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-end">
+              <div>
+                <p className="text-gray-900 text-lg font-bold">יצירת דף נחיתה</p>
+                <p className="text-gray-500 text-sm">
+                  שלב 2 מתוך 2: הגדרות דף נחיתה
+                </p>
+              </div>
+              <span className="text-primary text-sm font-bold">100%</span>
+            </div>
+            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full"
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Settings */}
+          <div className="space-y-6">
+            {/* Course Summary Card */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                סיכום הקורס
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {details.title || "שם הקורס"}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {details.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+                  <div>
+                    <p className="text-xs text-gray-400">תאריכים</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {details.schedule.dates || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">שעות</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {details.schedule.time || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">ימים</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {details.schedule.days || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">מיקום</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {details.location || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">משך</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {details.duration || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">קהל יעד</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {details.target_audience || "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Landing Page Settings */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                הגדרות דף נחיתה
+              </h2>
+
+              <div className="space-y-6">
+                {/* Extended Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    מידע נוסף על הקורס
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    מידע מורחב שיופיע בדף הנחיתה (סילבוס, דרישות קדם, מה נלמד...)
+                  </p>
+                  <textarea
+                    value={extendedDescription}
+                    onChange={(e) => setExtendedDescription(e.target.value)}
+                    onBlur={updateLandingConfig}
+                    rows={6}
+                    className="w-full p-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none placeholder:text-gray-400"
+                    placeholder={`למשל:
+
+מה נלמד בקורס:
+• יסודות HTML ו-CSS
+• JavaScript מתחילים
+• בניית אתר אמיתי
+
+דרישות קדם: אין! מתאים למתחילים מוחלטים`}
+                  />
+                </div>
+
+                {/* Interview Toggle */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      נדרש ראיון קבלה
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      אם מופעל, יתווסף שדה &quot;זמינות לראיון&quot; בטופס
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={requiresInterview}
+                      onChange={(e) => {
+                        setRequiresInterview(e.target.checked);
+                        setTimeout(updateLandingConfig, 0);
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                </div>
+
+                {/* Referral Options (read-only) */}
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-2">
+                    אפשרויות &quot;איך הגעת אלינו&quot;
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {["חבר/ה", "פייסבוק", "גוגל", "אחר"].map((option) => (
+                      <span
+                        key={option}
+                        className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-500"
+                      >
+                        {option}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={() => router.push("/create")}
+                className="w-full sm:w-auto px-6 h-12 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-400 font-medium transition-colors cursor-pointer flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined rtl:rotate-180">
+                  arrow_back
+                </span>
+                חזור לשלב 1
+              </button>
+              <button
+                type="button"
+                disabled={isCreating}
+                onClick={createLandingPage}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 h-12 bg-primary hover:opacity-90 text-gray-900 text-base font-bold rounded-lg shadow-sm shadow-primary/20 transition-all transform active:scale-95 disabled:opacity-50"
+              >
+                <span>{isCreating ? "יוצר דף נחיתה..." : "צור דף נחיתה"}</span>
+                <span className="material-symbols-outlined">rocket_launch</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Preview */}
+          <div>
+            <BannerPreview
+              bannerUrl={assets?.banner_url}
+              backgroundUrl={assets?.background_url}
+            />
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}
