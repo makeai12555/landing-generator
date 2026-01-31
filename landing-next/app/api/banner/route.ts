@@ -183,49 +183,41 @@ async function generateBannerImage(
   if (course.duration) courseDetails.push(course.duration);
   const detailsText = courseDetails.length > 0 ? courseDetails.join(" • ") : "";
 
-  // Build a clear, focused prompt for Hebrew banner generation
-  // Using "separation of concerns" - Art Direction separate from Content Elements
-  const promptText = `Create a professional marketing banner image for an online course.
+  // Build prompt using 5-principle framework: Goal, Subject, Context, Layout, Style
+  const promptText = `Create a 16:9 professional course banner.
 
-=== ART DIRECTION ===
-Visual Style: ${visualStyle}
-Composition: ${compositionRule}
-Lighting: ${lightingMood}
-Color Palette: ${colorMood}
-Design Language: ${style}
+GOAL: Marketing banner for course registration landing page.
 
-=== CONTENT ELEMENTS (Hebrew - CRITICAL) ===
+SUBJECT: Course titled "${course.title_he}"${course.subtitle_he && course.subtitle_he !== course.title_he ? ` - ${course.subtitle_he}` : ""}
+The Hebrew text is the HERO element - must be prominent and readable.
 
-HEBREW TEXT TO DISPLAY ON THE BANNER (COPY EXACTLY AS WRITTEN):
+CONTEXT: Professional education, adult learners, trustworthy brand tone.
 
-1. HEADLINE (largest text):
-"${course.title_he}"
+LAYOUT: ${compositionRule}
+Text hierarchy:
+1. HEADLINE (largest): "${course.title_he}"
+${course.subtitle_he && course.subtitle_he !== course.title_he ? `2. SUBTITLE (medium): "${course.subtitle_he}"` : ""}
+${detailsText ? `3. DETAILS (small): "${detailsText}"` : ""}
 
-2. SUBTITLE (medium text, below headline):
-${course.subtitle_he && course.subtitle_he !== course.title_he ? `"${course.subtitle_he}"` : "(no subtitle)"}
+Keep background CLEAN behind text - no busy elements competing with Hebrew text.
+All text RIGHT-TO-LEFT Hebrew.
 
-3. COURSE DETAILS (smaller text, bottom area):
-${detailsText ? `"${detailsText}"` : "(no details)"}
-
-=== TYPOGRAPHY ===
-- Text style: ${material}
-- Hebrew font: Modern sans-serif (like Heebo or Rubik)
-- All Hebrew characters must be crisp, sharp, and perfectly spelled
-- All text in Hebrew, RIGHT-TO-LEFT (RTL)
-- High contrast between text and background
-
-=== TECHNICAL SPECS ===
-- Aspect ratio: 16:9 (wide banner format)
+STYLE:
+- Visual: ${visualStyle}
+- Lighting: ${lightingMood}
+- Colors: ${colorMood}
+- Design: ${style}
+- Typography: ${material}
+- Font: Modern Hebrew sans-serif (Heebo/Rubik style)
 - Brand colors: ${brandColorDesc}
 
-=== INTEGRATION RULES ===
-- The visual style must harmonize with the Hebrew text overlay
-- Respect the composition rule - leave negative space where specified for text
-- Do NOT place busy visual elements behind text areas
-- Ensure text remains fully legible against the background
-- Leave breathing room around all text elements
+CRITICAL RULES:
+- Hebrew text must be crisp, sharp, perfectly legible
+- High contrast between text and background
+- Visual style SUPPORTS text, doesn't compete
+- Leave negative space where composition rule specifies
 
-OUTPUT: A single high-quality 16:9 banner image with all the Hebrew text displayed`;
+OUTPUT: Single high-quality 16:9 banner with all Hebrew text clearly displayed.`;
 
   // Build logo integration instructions if logos are provided
   let logoInstructions = "";
