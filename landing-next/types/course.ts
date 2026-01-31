@@ -30,6 +30,11 @@ export interface DesignPreferences {
   typography_style: string;
   composition: string;
   visual_inspiration: string;
+  // Art direction fields
+  visual_style: 'photorealistic' | 'three_d_render' | 'vector_flat' | 'abstract_tech' | 'hand_drawn';
+  composition_rule: 'text_center' | 'text_side_negative_space' | 'knolling' | 'rule_of_thirds' | 'bento_grid';
+  lighting_mood: 'golden_hour' | 'soft_studio' | 'neon_cyberpunk' | 'rembrandt' | 'natural_bright';
+  color_mood: 'corporate' | 'creative_vibrant' | 'luxury_dark' | 'pastel_soft' | 'monochromatic';
 }
 
 export interface ThemeColors {
@@ -97,6 +102,11 @@ export const defaultCourseData: CourseData = {
     typography_style: "modern_sans",
     composition: "balanced",
     visual_inspiration: "",
+    // Art direction defaults
+    visual_style: "photorealistic",
+    composition_rule: "text_center",
+    lighting_mood: "soft_studio",
+    color_mood: "corporate",
   },
   branding: {
     logo: null, // Deprecated

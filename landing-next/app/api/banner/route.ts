@@ -35,6 +35,11 @@ interface DesignPreferences {
   aesthetic_style?: string;
   color_palette?: string;
   lighting_and_atmosphere?: string;
+  // Art direction fields
+  visual_style?: string;
+  composition_rule?: string;
+  lighting_mood?: string;
+  color_mood?: string;
 }
 
 interface BannerRequest {
@@ -102,14 +107,6 @@ const COLOR_MAP: Record<string, string> = {
   vibrant: "vibrant saturated colors, bold and eye-catching, high energy",
 };
 
-const LIGHTING_MAP: Record<string, string> = {
-  natural_light: "natural daylight, bright and clear, outdoor feel",
-  studio: "professional studio lighting, even illumination, commercial quality",
-  warm: "warm golden hour lighting, cozy amber tones, inviting atmosphere",
-  neon: "neon lighting, futuristic glow effects, cyberpunk aesthetic",
-  soft: "soft diffused lighting, gentle shadows, dreamy atmosphere",
-};
-
 // Material styles based on aesthetic - describes how the Hebrew text should look
 const MATERIAL_MAP: Record<string, string> = {
   minimalist: "Clean, flat design with subtle shadow for depth. Solid color fill, sharp edges.",
@@ -119,6 +116,39 @@ const MATERIAL_MAP: Record<string, string> = {
   playful: "Bold 3D cartoon-style letters, vibrant gradients, fun shadows and highlights",
 };
 
+// Art Direction Maps - separate from content elements
+const VISUAL_STYLE_MAP: Record<string, string> = {
+  photorealistic: "Photorealistic photography, 4K resolution, cinematic lighting, depth of field, professional quality",
+  three_d_render: "3D render, Unreal Engine 5 quality, clay render aesthetic, soft shadows, isometric if relevant",
+  vector_flat: "Minimalist vector illustration, flat design, clean lines, solid colors, corporate Memphis style",
+  abstract_tech: "Abstract tech visualization, data visualization style, glowing geometry, network nodes, digital aesthetic",
+  hand_drawn: "Hand-drawn watercolor illustration, artistic sketch style, organic textures, painterly feel",
+};
+
+const COMPOSITION_RULE_MAP: Record<string, string> = {
+  text_center: "Centered composition with text as the main focal point, symmetrical balance",
+  text_side_negative_space: "Wide shot with 40% clean negative space on the LEFT side reserved for Hebrew text overlay. Keep this area uncluttered with simple gradient or solid color.",
+  knolling: "Knolling arrangement - objects laid flat, top-down view at 90-degree angles, organized grid",
+  rule_of_thirds: "Rule of thirds composition, cinematic framing, balanced asymmetry",
+  bento_grid: "Bento grid layout with clean rectangular sections, modern compartmentalized design",
+};
+
+const LIGHTING_MOOD_MAP: Record<string, string> = {
+  golden_hour: "Golden hour lighting with warm amber and orange tones, inviting atmosphere",
+  soft_studio: "Professional soft studio lighting, even illumination, commercial photography quality",
+  neon_cyberpunk: "Neon cyberpunk lighting with dramatic glows, electric blues and magentas",
+  rembrandt: "Rembrandt lighting with dramatic directional shadows, artistic and moody",
+  natural_bright: "Natural bright daylight, clear and fresh, outdoor feel",
+};
+
+const COLOR_MOOD_MAP: Record<string, string> = {
+  corporate: "Corporate professional palette - navy blues, clean whites, trustworthy grays",
+  creative_vibrant: "Vibrant saturated colors, bold and eye-catching, high energy",
+  luxury_dark: "Luxury dark palette - deep blacks, gold accents, premium sophisticated feel",
+  pastel_soft: "Soft pastel palette - muted gentle tones, calming and approachable",
+  monochromatic: "Monochromatic color scheme - variations of a single color for cohesion",
+};
+
 async function generateBannerImage(
   client: GoogleGenAI,
   course: CourseData,
@@ -126,11 +156,17 @@ async function generateBannerImage(
   branding?: { logos?: Logo[]; colors?: BrandingColors },
   logosBase64?: string[]
 ): Promise<Uint8Array> {
+  // Legacy style mappings (for backward compatibility)
   const aestheticStyle = design?.aesthetic_style || "modern_tech";
   const style = STYLE_MAP[aestheticStyle] || "modern professional";
   const colors = COLOR_MAP[design?.color_palette || "light_airy"] || "professional colors";
-  const lighting = LIGHTING_MAP[design?.lighting_and_atmosphere || "natural_light"] || "bright and inviting";
   const material = MATERIAL_MAP[aestheticStyle] || "Clean professional finish";
+
+  // New Art Direction mappings
+  const visualStyle = VISUAL_STYLE_MAP[design?.visual_style || "photorealistic"] || VISUAL_STYLE_MAP.photorealistic;
+  const compositionRule = COMPOSITION_RULE_MAP[design?.composition_rule || "text_center"] || COMPOSITION_RULE_MAP.text_center;
+  const lightingMood = LIGHTING_MOOD_MAP[design?.lighting_mood || "soft_studio"] || LIGHTING_MOOD_MAP.soft_studio;
+  const colorMood = COLOR_MOOD_MAP[design?.color_mood || "corporate"] || COLOR_MOOD_MAP.corporate;
 
   // Build brand color description
   const brandColorDesc = branding?.colors?.primary
@@ -148,37 +184,46 @@ async function generateBannerImage(
   const detailsText = courseDetails.length > 0 ? courseDetails.join(" • ") : "";
 
   // Build a clear, focused prompt for Hebrew banner generation
+  // Using "separation of concerns" - Art Direction separate from Content Elements
   const promptText = `Create a professional marketing banner image for an online course.
 
-SPECIFICATIONS:
-- Aspect ratio: 16:9 (wide banner format)
-- Style: ${style}
-- Colors: ${brandColorDesc}
-- Lighting: ${lighting}
+=== ART DIRECTION ===
+Visual Style: ${visualStyle}
+Composition: ${compositionRule}
+Lighting: ${lightingMood}
+Color Palette: ${colorMood}
+Design Language: ${style}
 
-HEBREW TEXT TO DISPLAY ON THE BANNER (CRITICAL - COPY EXACTLY):
+=== CONTENT ELEMENTS (Hebrew - CRITICAL) ===
 
-1. HEADLINE (largest text, top-center):
+HEBREW TEXT TO DISPLAY ON THE BANNER (COPY EXACTLY AS WRITTEN):
+
+1. HEADLINE (largest text):
 "${course.title_he}"
 
 2. SUBTITLE (medium text, below headline):
 ${course.subtitle_he && course.subtitle_he !== course.title_he ? `"${course.subtitle_he}"` : "(no subtitle)"}
 
-3. COURSE DETAILS (smaller text, bottom area of banner):
+3. COURSE DETAILS (smaller text, bottom area):
 ${detailsText ? `"${detailsText}"` : "(no details)"}
 
-LAYOUT REQUIREMENTS:
-- Headline: Large, bold, centered at top
-- Subtitle: Medium size, below headline
-- Details: Smaller text at bottom, single line
-- All text in Hebrew, RIGHT-TO-LEFT (RTL)
-- High contrast between text and background
-- Leave breathing room around text elements
-
-TYPOGRAPHY:
+=== TYPOGRAPHY ===
 - Text style: ${material}
 - Hebrew font: Modern sans-serif (like Heebo or Rubik)
 - All Hebrew characters must be crisp, sharp, and perfectly spelled
+- All text in Hebrew, RIGHT-TO-LEFT (RTL)
+- High contrast between text and background
+
+=== TECHNICAL SPECS ===
+- Aspect ratio: 16:9 (wide banner format)
+- Brand colors: ${brandColorDesc}
+
+=== INTEGRATION RULES ===
+- The visual style must harmonize with the Hebrew text overlay
+- Respect the composition rule - leave negative space where specified for text
+- Do NOT place busy visual elements behind text areas
+- Ensure text remains fully legible against the background
+- Leave breathing room around all text elements
 
 OUTPUT: A single high-quality 16:9 banner image with all the Hebrew text displayed`;
 

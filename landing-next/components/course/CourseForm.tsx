@@ -174,6 +174,11 @@ export function CourseForm() {
             aesthetic_style: courseData.design_preferences.aesthetic_style,
             color_palette: courseData.design_preferences.color_palette,
             lighting_and_atmosphere: courseData.design_preferences.lighting_and_atmosphere,
+            // Art direction fields
+            visual_style: courseData.design_preferences.visual_style,
+            composition_rule: courseData.design_preferences.composition_rule,
+            lighting_mood: courseData.design_preferences.lighting_mood,
+            color_mood: courseData.design_preferences.color_mood,
           },
           branding: {
             logos: courseData.branding.logos || [],
@@ -518,6 +523,90 @@ export function CourseForm() {
                     <option value="vibrant">נועז ורווי</option>
                   </select>
                 </label>
+              </div>
+
+              {/* Art Direction - Advanced Design Options */}
+              <div className="pt-4 border-t border-gray-100">
+                <p className="text-sm font-semibold text-gray-900 mb-4">
+                  הגדרות מתקדמות לבאנר
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      סגנון ויזואלי
+                    </span>
+                    <select
+                      value={courseData.design_preferences.visual_style}
+                      onChange={(e) =>
+                        updateDesignPreferences("visual_style", e.target.value)
+                      }
+                      className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="photorealistic">ריאליסטי / צילומי</option>
+                      <option value="three_d_render">תלת-ממד</option>
+                      <option value="vector_flat">וקטור נקי / שטוח</option>
+                      <option value="abstract_tech">מופשט / טכנולוגי</option>
+                      <option value="hand_drawn">איור ידני</option>
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      קומפוזיציה
+                    </span>
+                    <select
+                      value={courseData.design_preferences.composition_rule}
+                      onChange={(e) =>
+                        updateDesignPreferences("composition_rule", e.target.value)
+                      }
+                      className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="text_center">טקסט במרכז</option>
+                      <option value="text_side_negative_space">טקסט בצד (מרחב נקי)</option>
+                      <option value="knolling">סידור שטוח (Knolling)</option>
+                      <option value="rule_of_thirds">חוק השלישים</option>
+                      <option value="bento_grid">רשת מחולקת (Bento)</option>
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      תאורה ואווירה
+                    </span>
+                    <select
+                      value={courseData.design_preferences.lighting_mood}
+                      onChange={(e) =>
+                        updateDesignPreferences("lighting_mood", e.target.value)
+                      }
+                      className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="golden_hour">שעת הזהב (חמים)</option>
+                      <option value="soft_studio">סטודיו מקצועי</option>
+                      <option value="neon_cyberpunk">ניאון / סייברפאנק</option>
+                      <option value="rembrandt">דרמטי אמנותי</option>
+                      <option value="natural_bright">טבעי ובהיר</option>
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      אווירת צבעים
+                    </span>
+                    <select
+                      value={courseData.design_preferences.color_mood}
+                      onChange={(e) =>
+                        updateDesignPreferences("color_mood", e.target.value)
+                      }
+                      className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="corporate">עסקי (כחול/לבן)</option>
+                      <option value="creative_vibrant">יצירתי (צבעוני)</option>
+                      <option value="luxury_dark">יוקרתי (שחור/זהב)</option>
+                      <option value="pastel_soft">רך (פסטל)</option>
+                      <option value="monochromatic">מונוכרומטי</option>
+                    </select>
+                  </label>
+                </div>
               </div>
 
               {/* Banner Generation */}
