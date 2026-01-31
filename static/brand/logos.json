@@ -1,14 +1,68 @@
 [
   {
-    "id": "jerusalem_city",
+    "id": "irya",
     "name": "עיריית ירושלים",
-    "url": "/static/brand/logos/jerusalem_city.svg",
+    "url": "/static/brand/logos/irya.png",
     "tags": ["עירייה", "ירושלים"]
   },
   {
-    "id": "shivion",
-    "name": "שוויון",
-    "url": "/static/brand/logos/shivion.svg",
-    "tags": ["חינוך", "שוויון"]
+    "id": "minhal",
+    "name": "מנהל חינוך",
+    "url": "/static/brand/logos/minhal.png",
+    "tags": ["חינוך", "מנהל"]
+  },
+  {
+    "id": "hinoch",
+    "name": "אגף החינוך",
+    "url": "/static/brand/logos/hinoch.png",
+    "tags": ["חינוך", "אגף"]
+  },
+  {
+    "id": "kidom",
+    "name": "קידום נוער",
+    "url": "/static/brand/logos/kidom.png",
+    "tags": ["נוער", "קידום"]
+  },
+  {
+    "id": "revaha",
+    "name": "רווחה",
+    "url": "/static/brand/logos/revaha.png",
+    "tags": ["רווחה", "שירותים"]
+  },
+  {
+    "id": "hila",
+    "name": "הילה",
+    "url": "/static/brand/logos/hila.png",
+    "tags": ["הילה", "תוכנית"]
+  },
+  {
+    "id": "leomit",
+    "name": "לאומית",
+    "url": "/static/brand/logos/leomit.png",
+    "tags": ["לאומית", "ביטוח"]
+  },
+  {
+    "id": "moza",
+    "name": "מוצא",
+    "url": "/static/brand/logos/moza.png",
+    "tags": ["מוצא", "מרכז"]
+  },
+  {
+    "id": "maane",
+    "name": "מענה",
+    "url": "/static/brand/logos/maane.png",
+    "tags": ["מענה", "שירות"]
+  },
+  {
+    "id": "makbatz",
+    "name": "מקבץ",
+    "url": "/static/brand/logos/makbatz.png",
+    "tags": ["מקבץ", "קהילה"]
+  },
+  {
+    "id": "mentoring",
+    "name": "מנטורינג",
+    "url": "/static/brand/logos/mentoring.png",
+    "tags": ["מנטורינג", "הכשרה"]
   }
 ]

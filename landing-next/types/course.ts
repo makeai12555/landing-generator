@@ -41,7 +41,8 @@ export interface ThemeColors {
 }
 
 export interface Branding {
-  logo: Logo | null;
+  logo: Logo | null; // Deprecated - use logos instead
+  logos: Logo[]; // Up to 3 logos for banner integration
   theme: {
     theme_id: string;
     font_stack_id: string;
@@ -98,7 +99,8 @@ export const defaultCourseData: CourseData = {
     visual_inspiration: "",
   },
   branding: {
-    logo: null,
+    logo: null, // Deprecated
+    logos: [],
     theme: {
       theme_id: "courseflow_light_mint",
       font_stack_id: "inter_noto",

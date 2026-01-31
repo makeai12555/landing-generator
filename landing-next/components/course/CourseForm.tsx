@@ -41,9 +41,18 @@ export function CourseForm() {
     value: string
   ) => {
     setCourseData((prev) => {
+      // Clear banner if title or description changes (affects banner content)
+      const shouldClearBanner = field === "title" || field === "description";
       const updated = {
         ...prev,
         course_details: { ...prev.course_details, [field]: value },
+        ...(shouldClearBanner && {
+          generated_assets: {
+            ...prev.generated_assets,
+            banner_url: "",
+            background_url: "",
+          },
+        }),
       };
       saveToStorage(updated);
       return updated;
@@ -75,17 +84,33 @@ export function CourseForm() {
       const updated = {
         ...prev,
         design_preferences: { ...prev.design_preferences, [field]: value },
+        // Clear cached banner when design preferences change
+        generated_assets: {
+          ...prev.generated_assets,
+          banner_url: "",
+          background_url: "",
+        },
       };
       saveToStorage(updated);
       return updated;
     });
   };
 
-  const updateLogo = (logo: Logo | null) => {
+  const updateLogos = (logos: Logo[]) => {
     setCourseData((prev) => {
       const updated = {
         ...prev,
-        branding: { ...prev.branding, logo },
+        branding: {
+          ...prev.branding,
+          logos,
+          logo: logos[0] || null, // Keep backward compatibility
+        },
+        // Clear cached banner when logos change
+        generated_assets: {
+          ...prev.generated_assets,
+          banner_url: "",
+          background_url: "",
+        },
       };
       saveToStorage(updated);
       return updated;
@@ -119,57 +144,65 @@ export function CourseForm() {
     setIsGenerating(true);
     setBannerStatus("שולח בקשה ליצירת באנר...");
 
+    // Clear old banner before generating new one
+    setCourseData((prev) => {
+      const updated = {
+        ...prev,
+        generated_assets: {
+          ...prev.generated_assets,
+          banner_url: "",
+          background_url: "",
+        },
+      };
+      saveToStorage(updated);
+      return updated;
+    });
+
     try {
       const response = await fetch("/api/banner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           course: {
-            title_en: courseData.course_details.title,
-            subtitle_en: courseData.course_details.description.slice(0, 80),
-            dates_en: courseData.course_details.schedule.dates,
-            time_en: courseData.course_details.schedule.time,
-            day_en: courseData.course_details.schedule.days,
-            location_en: courseData.course_details.location,
-            duration_en: courseData.course_details.duration,
-            cta_en: "Register Now",
             title_he: courseData.course_details.title,
             subtitle_he: courseData.course_details.description.slice(0, 80),
-            dates_he: courseData.course_details.schedule.dates,
-            time_he: courseData.course_details.schedule.time,
-            day_he: courseData.course_details.schedule.days,
-            location_he: courseData.course_details.location,
-            duration_he: courseData.course_details.duration,
-            cta_he: "להרשמה עכשיו",
+            duration: courseData.course_details.duration,
+            schedule: courseData.course_details.schedule,
+            location: courseData.course_details.location,
           },
           design: {
             aesthetic_style: courseData.design_preferences.aesthetic_style,
             color_palette: courseData.design_preferences.color_palette,
             lighting_and_atmosphere: courseData.design_preferences.lighting_and_atmosphere,
           },
+          branding: {
+            logos: courseData.branding.logos || [],
+            colors: {
+              primary: courseData.branding.theme.overrides.primary,
+              accent: courseData.branding.theme.overrides.accent,
+            },
+          },
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Banner generation failed");
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Banner generation failed");
       }
 
-      // Response is image/png
-      const blob = await response.blob();
-      const bannerUrl = URL.createObjectURL(blob);
+      // Response contains banner (with text) and background (without text)
+      const { banner, background } = result;
 
       setCourseData((prev) => {
         const updated = {
           ...prev,
           generated_assets: {
             ...prev.generated_assets,
-            banner_url: bannerUrl,
-            background_url: bannerUrl,
+            banner_url: banner,
+            background_url: background,
           },
         };
-        // For localStorage, we'd need to convert to base64
-        // For now, just save without the URL
         saveToStorage(updated);
         return updated;
       });
@@ -258,18 +291,23 @@ export function CourseForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <label className="flex flex-col gap-2">
                   <span className="text-sm font-semibold text-gray-900">
-                    משך הקורס <span className="text-red-500">*</span>
+                    מספר מפגשים <span className="text-red-500">*</span>
                   </span>
-                  <input
-                    type="text"
+                  <select
                     value={courseData.course_details.duration}
                     onChange={(e) =>
                       updateCourseDetails("duration", e.target.value)
                     }
-                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                    placeholder="למשל: 10 שבועות, 60 שעות"
+                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
                     required
-                  />
+                  >
+                    <option value="">בחר מספר מפגשים</option>
+                    {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
+                      <option key={num} value={`${num} מפגשים`}>
+                        {num} {num === 1 ? "מפגש" : "מפגשים"}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="flex flex-col gap-2">
@@ -289,46 +327,116 @@ export function CourseForm() {
                 </label>
               </div>
 
-              {/* Schedule */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Schedule - Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <label className="flex flex-col gap-2">
                   <span className="text-sm font-semibold text-gray-900">
-                    תאריכים <span className="text-red-500">*</span>
+                    תאריך התחלה <span className="text-red-500">*</span>
                   </span>
                   <input
-                    type="text"
-                    value={courseData.course_details.schedule.dates}
-                    onChange={(e) => updateSchedule("dates", e.target.value)}
-                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                    placeholder="למשל: 15.1.2025 - 30.3.2025"
+                    type="date"
+                    value={courseData.course_details.schedule.dates.split(" - ")[0] || ""}
+                    onChange={(e) => {
+                      const endDate = courseData.course_details.schedule.dates.split(" - ")[1] || "";
+                      const newDates = endDate ? `${e.target.value} - ${endDate}` : e.target.value;
+                      updateSchedule("dates", newDates);
+                    }}
+                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
                     required
                   />
                 </label>
 
                 <label className="flex flex-col gap-2">
                   <span className="text-sm font-semibold text-gray-900">
-                    ימים <span className="text-red-500">*</span>
+                    תאריך סיום <span className="text-red-500">*</span>
                   </span>
                   <input
-                    type="text"
-                    value={courseData.course_details.schedule.days}
-                    onChange={(e) => updateSchedule("days", e.target.value)}
-                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                    placeholder="למשל: ימי ראשון וחמישי"
+                    type="date"
+                    value={courseData.course_details.schedule.dates.split(" - ")[1] || ""}
+                    onChange={(e) => {
+                      const startDate = courseData.course_details.schedule.dates.split(" - ")[0] || "";
+                      const newDates = startDate ? `${startDate} - ${e.target.value}` : e.target.value;
+                      updateSchedule("dates", newDates);
+                    }}
+                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                    required
+                  />
+                </label>
+              </div>
+
+              {/* Schedule - Days */}
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-semibold text-gray-900">
+                  ימים <span className="text-red-500">*</span>
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "ראשון", label: "א׳" },
+                    { value: "שני", label: "ב׳" },
+                    { value: "שלישי", label: "ג׳" },
+                    { value: "רביעי", label: "ד׳" },
+                    { value: "חמישי", label: "ה׳" },
+                    { value: "שישי", label: "ו׳" },
+                  ].map((day) => {
+                    const selectedDays = courseData.course_details.schedule.days
+                      .split(", ")
+                      .filter(Boolean);
+                    const isSelected = selectedDays.includes(day.value);
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => {
+                          const newDays = isSelected
+                            ? selectedDays.filter((d) => d !== day.value)
+                            : [...selectedDays, day.value];
+                          updateSchedule("days", newDays.join(", "));
+                        }}
+                        className={`w-12 h-12 rounded-lg border-2 font-semibold transition-all ${
+                          isSelected
+                            ? "bg-primary border-primary text-gray-900"
+                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Schedule - Time */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-semibold text-gray-900">
+                    שעת התחלה <span className="text-red-500">*</span>
+                  </span>
+                  <input
+                    type="time"
+                    value={courseData.course_details.schedule.time.split("-")[0] || ""}
+                    onChange={(e) => {
+                      const endTime = courseData.course_details.schedule.time.split("-")[1] || "";
+                      const newTime = endTime ? `${e.target.value}-${endTime}` : e.target.value;
+                      updateSchedule("time", newTime);
+                    }}
+                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
                     required
                   />
                 </label>
 
                 <label className="flex flex-col gap-2">
                   <span className="text-sm font-semibold text-gray-900">
-                    שעות <span className="text-red-500">*</span>
+                    שעת סיום <span className="text-red-500">*</span>
                   </span>
                   <input
-                    type="text"
-                    value={courseData.course_details.schedule.time}
-                    onChange={(e) => updateSchedule("time", e.target.value)}
-                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-gray-400"
-                    placeholder="למשל: 18:00-21:00"
+                    type="time"
+                    value={courseData.course_details.schedule.time.split("-")[1] || ""}
+                    onChange={(e) => {
+                      const startTime = courseData.course_details.schedule.time.split("-")[0] || "";
+                      const newTime = startTime ? `${startTime}-${e.target.value}` : e.target.value;
+                      updateSchedule("time", newTime);
+                    }}
+                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
                     required
                   />
                 </label>
@@ -367,8 +475,8 @@ export function CourseForm() {
             <div className="space-y-6">
               {/* Logo Picker */}
               <LogoPicker
-                selectedLogo={courseData.branding.logo}
-                onSelect={updateLogo}
+                selectedLogos={courseData.branding.logos || []}
+                onSelect={updateLogos}
               />
 
               {/* Design Dropdowns */}
