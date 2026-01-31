@@ -29,6 +29,7 @@ export interface LandingPageData {
   theme?: {
     primary?: string; // e.g., "#13ecda"
     accent?: string;
+    fontFamily?: string; // e.g., "Heebo"
   };
 
   // Registration form configuration

@@ -196,8 +196,8 @@ export function CourseForm() {
         throw new Error(result.error || "Banner generation failed");
       }
 
-      // Response contains banner (with text) and background (without text)
-      const { banner, background } = result;
+      // Response contains banner (with text), background (without text), and extracted colors
+      const { banner, background, colors } = result;
 
       setCourseData((prev) => {
         const updated = {
@@ -206,6 +206,19 @@ export function CourseForm() {
             ...prev.generated_assets,
             banner_url: banner,
             background_url: background,
+          },
+          // Save extracted colors from banner to branding theme
+          branding: {
+            ...prev.branding,
+            theme: {
+              ...prev.branding.theme,
+              colors: colors
+                ? {
+                    primary: colors.primary,
+                    accent: colors.accent,
+                  }
+                : prev.branding.theme.colors,
+            },
           },
         };
         saveToStorage(updated);

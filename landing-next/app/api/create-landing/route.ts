@@ -26,6 +26,7 @@ interface CourseData {
       url?: string;
     };
     theme?: {
+      font_family?: string;
       colors?: {
         primary?: string;
         accent?: string;
@@ -68,6 +69,9 @@ export async function POST(req: Request) {
     const landingConfig = courseData.landing_config || {};
     const colors = branding.theme?.colors || {};
 
+    // Get font family from branding
+    const fontFamily = branding.theme?.font_family || "Heebo";
+
     // Build landing data for Apps Script
     const landingData = {
       action: "createLanding",
@@ -88,6 +92,7 @@ export async function POST(req: Request) {
       theme: {
         primary: colors.primary || "#FFD700",
         accent: colors.accent || "#1a1a2e",
+        fontFamily,
       },
       form: {
         requiresInterview: landingConfig.requires_interview || false,
@@ -119,6 +124,7 @@ export async function POST(req: Request) {
       theme: {
         primary: colors.primary || "#13ecda",
         accent: colors.accent || "#1a1a2e",
+        fontFamily,
       },
       form: {
         requiresInterview: landingConfig.requires_interview || false,

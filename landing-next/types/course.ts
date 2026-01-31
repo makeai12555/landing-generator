@@ -54,6 +54,7 @@ export interface Branding {
     palette_id: string;
     mode: "light" | "dark";
     colors?: ThemeColors;
+    font_family?: string; // Hebrew font from Google Fonts
     overrides: {
       primary: string | null;
       accent: string | null;
@@ -116,6 +117,7 @@ export const defaultCourseData: CourseData = {
       font_stack_id: "inter_noto",
       palette_id: "mint",
       mode: "light",
+      font_family: "Heebo",
       overrides: {
         primary: null,
         accent: null,

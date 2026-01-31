@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CourseData } from "@/types/course";
 import { defaultCourseData } from "@/types/course";
 import { BannerPreview } from "@/components/course";
+import { HEBREW_FONTS } from "@/constants/fonts";
 
 const STORAGE_KEY = "courseData";
 
@@ -13,6 +14,7 @@ export default function LandingConfigPage() {
   const [courseData, setCourseData] = useState<CourseData | null>(null);
   const [extendedDescription, setExtendedDescription] = useState("");
   const [requiresInterview, setRequiresInterview] = useState(false);
+  const [fontFamily, setFontFamily] = useState("Heebo");
   const [isCreating, setIsCreating] = useState(false);
 
   // Load from localStorage on mount
@@ -34,6 +36,10 @@ export default function LandingConfigPage() {
         setExtendedDescription(data.landing_config.extended_description || "");
         setRequiresInterview(data.landing_config.requires_interview || false);
       }
+      // Load font family if exists
+      if (data.branding?.theme?.font_family) {
+        setFontFamily(data.branding.theme.font_family);
+      }
     } catch (e) {
       console.error("Failed to parse saved course data:", e);
       router.push("/create");
@@ -45,6 +51,13 @@ export default function LandingConfigPage() {
 
     const updated = {
       ...courseData,
+      branding: {
+        ...courseData.branding,
+        theme: {
+          ...courseData.branding.theme,
+          font_family: fontFamily,
+        },
+      },
       landing_config: {
         extended_description: extendedDescription,
         requires_interview: requiresInterview,
@@ -69,6 +82,13 @@ export default function LandingConfigPage() {
         body: JSON.stringify({
           courseData: {
             ...courseData,
+            branding: {
+              ...courseData.branding,
+              theme: {
+                ...courseData.branding.theme,
+                font_family: fontFamily,
+              },
+            },
             landing_config: {
               extended_description: extendedDescription,
               requires_interview: requiresInterview,
@@ -272,6 +292,46 @@ export default function LandingConfigPage() {
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                   </label>
+                </div>
+
+                {/* Font Picker */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    פונט עברי לדף הנחיתה
+                  </label>
+                  <select
+                    value={fontFamily}
+                    onChange={(e) => {
+                      setFontFamily(e.target.value);
+                      setTimeout(updateLandingConfig, 0);
+                    }}
+                    className="w-full h-12 px-4 rounded-lg border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+                  >
+                    <optgroup label="סאנס-סריף">
+                      {HEBREW_FONTS.filter((f) => f.category === "sans-serif").map((font) => (
+                        <option key={font.id} value={font.name}>
+                          {font.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="סריף">
+                      {HEBREW_FONTS.filter((f) => f.category === "serif").map((font) => (
+                        <option key={font.id} value={font.name}>
+                          {font.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="כותרות">
+                      {HEBREW_FONTS.filter((f) => f.category === "display").map((font) => (
+                        <option key={font.id} value={font.name}>
+                          {font.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    הפונט יוחל על כל הטקסט בדף הנחיתה
+                  </p>
                 </div>
 
                 {/* Referral Options (read-only) */}

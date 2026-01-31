@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { GoogleGenAI } from "@google/genai";
+import { Vibrant } from "node-vibrant/node";
 
 // Gemini models with native image generation:
 // - gemini-2.5-flash-image: Fast, efficient (Nano Banana)
@@ -149,6 +150,97 @@ const COLOR_MOOD_MAP: Record<string, string> = {
   monochromatic: "Monochromatic color scheme - variations of a single color for cohesion",
 };
 
+/**
+ * Extract dominant colors from an image using node-vibrant
+ */
+async function extractColorsFromImage(imageBytes: Uint8Array): Promise<{
+  primary: string;
+  accent: string;
+}> {
+  try {
+    const buffer = Buffer.from(imageBytes);
+    const palette = await Vibrant.from(buffer).getPalette();
+
+    // Use Vibrant as primary (bright, attention-grabbing)
+    // Use DarkVibrant as accent (good for text, headers)
+    const primary = palette.Vibrant?.hex || "#13ecda";
+    const accent = palette.DarkVibrant?.hex || palette.Muted?.hex || "#1a1a2e";
+
+    console.log("Extracted colors:", { primary, accent, fullPalette: Object.keys(palette) });
+
+    return { primary, accent };
+  } catch (error) {
+    console.error("Failed to extract colors:", error);
+    return { primary: "#13ecda", accent: "#1a1a2e" };
+  }
+}
+
+async function generateHeroBackground(
+  client: GoogleGenAI,
+  course: CourseData,
+  design?: DesignPreferences,
+  branding?: { logos?: Logo[]; colors?: BrandingColors }
+): Promise<Uint8Array> {
+  const aestheticStyle = design?.aesthetic_style || "modern_tech";
+  const style = STYLE_MAP[aestheticStyle] || "modern professional";
+  const colors = COLOR_MAP[design?.color_palette || "light_airy"] || "professional colors";
+
+  const visualStyle = VISUAL_STYLE_MAP[design?.visual_style || "photorealistic"] || VISUAL_STYLE_MAP.photorealistic;
+  const compositionRule = COMPOSITION_RULE_MAP[design?.composition_rule || "text_center"] || COMPOSITION_RULE_MAP.text_center;
+  const lightingMood = LIGHTING_MOOD_MAP[design?.lighting_mood || "soft_studio"] || LIGHTING_MOOD_MAP.soft_studio;
+  const colorMood = COLOR_MOOD_MAP[design?.color_mood || "corporate"] || COLOR_MOOD_MAP.corporate;
+
+  const brandColorDesc = branding?.colors?.primary
+    ? `Use ${branding.colors.primary} as primary color${branding.colors.accent ? ` and ${branding.colors.accent} as accent` : ""}`
+    : colors;
+
+  const promptText = `Create a 16:9 professional background image for a course landing page.
+
+GOAL: Hero background image for a course about "${course.title_he}" - NO TEXT IN THE IMAGE.
+
+SUBJECT: Visual elements that represent the course theme/topic.
+This is a BACKGROUND image - it will have text overlaid on top of it later.
+
+CONTEXT: Professional education, adult learners, trustworthy brand tone.
+
+LAYOUT: ${compositionRule}
+- Leave clean areas for text overlay (especially center or left side)
+- Background should be visually interesting but not busy
+- Subtle, elegant visual elements
+
+STYLE:
+- Visual: ${visualStyle}
+- Lighting: ${lightingMood}
+- Colors: ${colorMood}
+- Design: ${style}
+- Brand colors: ${brandColorDesc}
+
+CRITICAL RULES:
+- ABSOLUTELY NO TEXT, LETTERS, WORDS, OR CHARACTERS in the image
+- No Hebrew, English, or any other language text
+- Clean background suitable for text overlay
+- Subtle visual elements that don't compete with future text overlay
+- Professional, polished look
+
+OUTPUT: Single high-quality 16:9 background image with NO TEXT whatsoever.`;
+
+  console.log("Generating hero background with prompt:", promptText);
+
+  const response = await client.models.generateContent({
+    model: MODEL,
+    contents: [{ role: "user", parts: [{ text: promptText }] }],
+    config: {
+      responseModalities: ["TEXT", "IMAGE"],
+    },
+  });
+
+  const imageBytes = extractImageFromResponse(response);
+  if (!imageBytes) {
+    throw new Error(`No image returned from Gemini for hero background. Model: ${MODEL}`);
+  }
+  return imageBytes;
+}
+
 async function generateBannerImage(
   client: GoogleGenAI,
   course: CourseData,
@@ -183,41 +275,49 @@ async function generateBannerImage(
   if (course.duration) courseDetails.push(course.duration);
   const detailsText = courseDetails.length > 0 ? courseDetails.join(" • ") : "";
 
-  // Build prompt using 5-principle framework: Goal, Subject, Context, Layout, Style
-  const promptText = `Create a 16:9 professional course banner.
+  // Build a clear, focused prompt for Hebrew banner generation
+  // Using "separation of concerns" - Art Direction separate from Content Elements
+  const promptText = `Create a professional marketing banner image for an online course.
 
-GOAL: Marketing banner for course registration landing page.
+=== ART DIRECTION ===
+Visual Style: ${visualStyle}
+Composition: ${compositionRule}
+Lighting: ${lightingMood}
+Color Palette: ${colorMood}
+Design Language: ${style}
 
-SUBJECT: Course titled "${course.title_he}"${course.subtitle_he && course.subtitle_he !== course.title_he ? ` - ${course.subtitle_he}` : ""}
-The Hebrew text is the HERO element - must be prominent and readable.
+=== CONTENT ELEMENTS (Hebrew - CRITICAL) ===
 
-CONTEXT: Professional education, adult learners, trustworthy brand tone.
+HEBREW TEXT TO DISPLAY ON THE BANNER (COPY EXACTLY AS WRITTEN):
 
-LAYOUT: ${compositionRule}
-Text hierarchy:
-1. HEADLINE (largest): "${course.title_he}"
-${course.subtitle_he && course.subtitle_he !== course.title_he ? `2. SUBTITLE (medium): "${course.subtitle_he}"` : ""}
-${detailsText ? `3. DETAILS (small): "${detailsText}"` : ""}
+1. HEADLINE (largest text):
+"${course.title_he}"
 
-Keep background CLEAN behind text - no busy elements competing with Hebrew text.
-All text RIGHT-TO-LEFT Hebrew.
+2. SUBTITLE (medium text, below headline):
+${course.subtitle_he && course.subtitle_he !== course.title_he ? `"${course.subtitle_he}"` : "(no subtitle)"}
 
-STYLE:
-- Visual: ${visualStyle}
-- Lighting: ${lightingMood}
-- Colors: ${colorMood}
-- Design: ${style}
-- Typography: ${material}
-- Font: Modern Hebrew sans-serif (Heebo/Rubik style)
+3. COURSE DETAILS (smaller text, bottom area):
+${detailsText ? `"${detailsText}"` : "(no details)"}
+
+=== TYPOGRAPHY ===
+- Text style: ${material}
+- Hebrew font: Modern sans-serif (like Heebo or Rubik)
+- All Hebrew characters must be crisp, sharp, and perfectly spelled
+- All text in Hebrew, RIGHT-TO-LEFT (RTL)
+- High contrast between text and background
+
+=== TECHNICAL SPECS ===
+- Aspect ratio: 16:9 (wide banner format)
 - Brand colors: ${brandColorDesc}
 
-CRITICAL RULES:
-- Hebrew text must be crisp, sharp, perfectly legible
-- High contrast between text and background
-- Visual style SUPPORTS text, doesn't compete
-- Leave negative space where composition rule specifies
+=== INTEGRATION RULES ===
+- The visual style must harmonize with the Hebrew text overlay
+- Respect the composition rule - leave negative space where specified for text
+- Do NOT place busy visual elements behind text areas
+- Ensure text remains fully legible against the background
+- Leave breathing room around all text elements
 
-OUTPUT: Single high-quality 16:9 banner with all Hebrew text clearly displayed.`;
+OUTPUT: A single high-quality 16:9 banner image with all the Hebrew text displayed`;
 
   // Build logo integration instructions if logos are provided
   let logoInstructions = "";
@@ -339,20 +439,23 @@ export async function POST(req: Request) {
 
     console.log(`Total logos fetched: ${logosBase64.length}`);
 
-    const imageBytes = await generateBannerImage(
-      client,
-      course,
-      design,
-      branding,
-      logosBase64
-    );
+    // Generate both images in parallel
+    const [bannerBytes, heroBytes] = await Promise.all([
+      generateBannerImage(client, course, design, branding, logosBase64),
+      generateHeroBackground(client, course, design, branding),
+    ]);
 
-    const imageBase64 = Buffer.from(imageBytes).toString("base64");
+    // Extract dominant colors from the banner
+    const colors = await extractColorsFromImage(bannerBytes);
+
+    const bannerBase64 = Buffer.from(bannerBytes).toString("base64");
+    const heroBase64 = Buffer.from(heroBytes).toString("base64");
 
     return Response.json({
       ok: true,
-      banner: `data:image/png;base64,${imageBase64}`,
-      background: `data:image/png;base64,${imageBase64}`,
+      banner: `data:image/png;base64,${bannerBase64}`,
+      background: `data:image/png;base64,${heroBase64}`,
+      colors,
     });
   } catch (error) {
     console.error("Banner generation error:", error);
