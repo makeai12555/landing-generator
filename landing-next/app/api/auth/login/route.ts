@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      { success: false, error: "שגיאה בחיבור לשרת. נסה שוב." },
+      { success: false, error: "שגיאה בחיבור לשרת. נסה שוב מאוחר יותר." },
       { status: 500 }
     );
   }

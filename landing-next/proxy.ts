@@ -2,26 +2,26 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
-const PROTECTED_PATHS = ["/create", "/api/banner", "/api/create-landing"];
 const PUBLIC_PATHS = ["/login", "/api/auth", "/l/", "/api/landing/", "/api/register", "/api/logos"];
+const PROTECTED_PREFIXES = ["/create", "/api/"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 }
 
 function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PATHS.some((p) => pathname.startsWith(p));
+  return PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths
+  // Public paths are always allowed (checked first — overrides protected)
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // Only check auth on protected paths
+  // Protect /create and all /api/* routes by default
   if (!isProtectedPath(pathname)) {
     return NextResponse.next();
   }
