@@ -14,7 +14,7 @@
 ### Deployment
 
 - [x] **DEPL-01**: Landing data persists on Vercel (migrate from fs.writeFile to Vercel Blob or equivalent)
-- [ ] **DEPL-02**: App is deployed on Vercel with all env vars configured
+- [x] **DEPL-02**: App is deployed on Vercel with all env vars configured
 - [x] **DEPL-03**: Instructors can share production URLs to landing pages (e.g. https://domain.com/l/[id])
 
 ### Banner Editing
@@ -68,7 +68,7 @@
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
 | DEPL-01 | Phase 2 | Complete |
-| DEPL-02 | Phase 2 | Pending |
+| DEPL-02 | Phase 2 | Complete |
 | DEPL-03 | Phase 2 | Complete |
 | BNRE-01 | Phase 3 | Pending |
 | BNRE-02 | Phase 3 | Pending |

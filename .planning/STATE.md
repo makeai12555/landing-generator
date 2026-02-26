@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** An instructor logs in, creates a landing page, shares a URL, and tracks registrations — the complete course marketing loop in one tool.
-**Current focus:** Phase 2 — Deploy Storage
+**Current focus:** Phase 3 — Banner Editing
 
 ## Current Position
 
-Phase: 2 of 5 (Deploy Storage)
-Plan: 1 of 1 in current phase
-Status: Phase 2 Plan 1 complete — Blob storage migration done
-Last activity: 2026-02-26 — Phase 2 Deploy Storage plan 01 complete
+Phase: 3 of 5 (Banner Editing)
+Plan: 0 of ? in current phase
+Status: Phase 2 complete — production deployed at courseflow-landing.vercel.app
+Last activity: 2026-02-26 — Phase 2 Deploy Storage plan 02 complete
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -28,10 +28,10 @@ Progress: [████░░░░░░] 40%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Auth Fix | 1 | 30 min | 30 min |
-| 2. Deploy Storage | 1 | 3 min | 3 min |
+| 2. Deploy Storage | 2 | 63 min | 31 min |
 
 **Recent Trend:**
-- Last 5 plans: 30 min
+- Last 5 plans: 31 min
 - Trend: —
 
 *Updated after each plan completion*
@@ -53,6 +53,9 @@ Recent decisions affecting current work:
 - Blob access for landings JSON set to 'public' — required so getLanding() can fetch() without signed token (landing data is intentionally public)
 - `getBaseUrl()` helper prefers `VERCEL_PROJECT_PRODUCTION_URL` (Vercel auto-injects) over `NEXT_PUBLIC_BASE_URL`
 - Banner route `maxDuration=60` added to prevent Vercel timeout during 15-30s Gemini image generation
+- Vercel project `courseflow-landing` connected to `makeai12555/landing-generator` (root `landing-next/`, branch master) — push to master triggers auto-deploy
+- Blob store `courseflow-landing-blob` provisioned; BLOB_READ_WRITE_TOKEN auto-injected by Vercel (Phase 2 complete)
+- Production verified: /login → 200, /create unauthenticated → redirects to /login, /l/[missing] → 404
 
 ### Pending Todos
 
@@ -67,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 02-deploy-storage/02-01-PLAN.md — Phase 2 Deploy Storage done, Blob migration complete
+Stopped at: Completed 02-deploy-storage/02-02-PLAN.md — Phase 2 complete, production live at courseflow-landing.vercel.app
 Resume file: None

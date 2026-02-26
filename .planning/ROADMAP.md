@@ -13,7 +13,7 @@ The app's core creation flow and banner generation already work. This milestone 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Auth Fix** - Diagnose and fix the broken login/session/route-protection flow
-- [ ] **Phase 2: Deploy + Storage** - Migrate storage off the filesystem and ship to production Vercel
+- [x] **Phase 2: Deploy + Storage** - Migrate storage off the filesystem and ship to production Vercel
 - [ ] **Phase 3: Banner Editing** - Add chat-style banner refinement after course creation
 - [ ] **Phase 4: Per-Course Sheets** - Wire Apps Script to auto-create a Google Sheet per course
 - [ ] **Phase 5: Feedback Forms** - Let instructors trigger a Google Form feedback at course end
@@ -44,8 +44,8 @@ Plans:
   4. Banner images appear correctly in production (no missing logos from NEXT_PUBLIC_BASE_URL misconfiguration)
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md — Migrate fs storage to Vercel Blob, fix base URL, add maxDuration, capture instructorEmail
-- [ ] 02-02-PLAN.md — Deploy to Vercel production, configure env vars and Blob store, verify end-to-end
+- [x] 02-01-PLAN.md — Migrate fs storage to Vercel Blob, fix base URL, add maxDuration, capture instructorEmail
+- [x] 02-02-PLAN.md — Deploy to Vercel production, configure env vars and Blob store, verify end-to-end
 
 ### Phase 3: Banner Editing
 **Goal**: Instructors can refine a generated banner after creation using a free-text Hebrew instruction
@@ -84,7 +84,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Auth Fix | 1/1 | Complete | 2026-02-26 |
-| 2. Deploy + Storage | 1/2 | In Progress|  |
+| 2. Deploy + Storage | 2/2 | Complete | 2026-02-26 |
 | 3. Banner Editing | 0/? | Not started | - |
 | 4. Per-Course Sheets | 0/? | Not started | - |
 | 5. Feedback Forms | 0/? | Not started | - |
