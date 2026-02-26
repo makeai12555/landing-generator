@@ -7,9 +7,9 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: Instructor can log in with username/password (via Google Apps Script + Sheets backend) and session is created
-- [ ] **AUTH-02**: Unauthenticated users are redirected to /login when accessing protected routes (/create, /api/*)
-- [ ] **AUTH-03**: Instructor can log out and session is cleared
+- [x] **AUTH-01**: Instructor can log in with username/password (via Google Apps Script + Sheets backend) and session is created
+- [x] **AUTH-02**: Unauthenticated users are redirected to /login when accessing protected routes (/create, /api/*)
+- [x] **AUTH-03**: Instructor can log out and session is cleared
 
 ### Deployment
 
@@ -64,9 +64,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
 | DEPL-01 | Phase 2 | Pending |
 | DEPL-02 | Phase 2 | Pending |
 | DEPL-03 | Phase 2 | Pending |
