@@ -42,7 +42,10 @@ Plans:
   2. The app is accessible at a public Vercel URL (not localhost)
   3. An instructor can copy their landing page URL (https://domain.com/l/[id]) and share it — recipients see the page without logging in
   4. Banner images appear correctly in production (no missing logos from NEXT_PUBLIC_BASE_URL misconfiguration)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 02-01-PLAN.md — Migrate fs storage to Vercel Blob, fix base URL, add maxDuration, capture instructorEmail
+- [ ] 02-02-PLAN.md — Deploy to Vercel production, configure env vars and Blob store, verify end-to-end
 
 ### Phase 3: Banner Editing
 **Goal**: Instructors can refine a generated banner after creation using a free-text Hebrew instruction
@@ -81,7 +84,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Auth Fix | 1/1 | Complete | 2026-02-26 |
-| 2. Deploy + Storage | 0/? | Not started | - |
+| 2. Deploy + Storage | 0/2 | Planned | - |
 | 3. Banner Editing | 0/? | Not started | - |
 | 4. Per-Course Sheets | 0/? | Not started | - |
 | 5. Feedback Forms | 0/? | Not started | - |
