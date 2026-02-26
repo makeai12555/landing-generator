@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
+    },
+    "gdrive": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-gdrive"],
+      "env": {
+        "GDRIVE_OAUTH_PATH": "c:\\Users\\boede\\projects\\courseflow\\client_secret_174076691452-grceq6ib6106tujkbe72mdbb9it47ahv.apps.googleusercontent.com.json",
+        "GDRIVE_CREDENTIALS_PATH": "c:\\Users\\boede\\projects\\courseflow\\.gdrive-server-credentials.json"
+      }
+    }
+  }
+}
