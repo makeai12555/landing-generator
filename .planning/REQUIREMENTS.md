@@ -7,7 +7,7 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: Instructor can log in with email/password and session is created
+- [ ] **AUTH-01**: Instructor can log in with username/password (via Google Apps Script + Sheets backend) and session is created
 - [ ] **AUTH-02**: Unauthenticated users are redirected to /login when accessing protected routes (/create, /api/*)
 - [ ] **AUTH-03**: Instructor can log out and session is cleared
 
@@ -52,7 +52,7 @@
 
 | Feature | Reason |
 |---------|--------|
-| OAuth / Google sign-in | Email/password via Google Sheets is sufficient for this org |
+| OAuth / Google sign-in | Username/password via Google Sheets is sufficient for this org |
 | Visual drag-and-drop banner editor | Chat-style refinement is simpler and better for non-technical users |
 | Database migration (Supabase/Postgres) | JSON files + Google Sheets sufficient for 50 instructors |
 | Real-time registration dashboard | Google Sheets already provides live view |
@@ -64,24 +64,24 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| DEPL-01 | — | Pending |
-| DEPL-02 | — | Pending |
-| DEPL-03 | — | Pending |
-| BNRE-01 | — | Pending |
-| BNRE-02 | — | Pending |
-| SHTS-01 | — | Pending |
-| SHTS-02 | — | Pending |
-| FDBK-01 | — | Pending |
-| FDBK-02 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| DEPL-01 | Phase 2 | Pending |
+| DEPL-02 | Phase 2 | Pending |
+| DEPL-03 | Phase 2 | Pending |
+| BNRE-01 | Phase 3 | Pending |
+| BNRE-02 | Phase 3 | Pending |
+| SHTS-01 | Phase 4 | Pending |
+| SHTS-02 | Phase 4 | Pending |
+| FDBK-01 | Phase 5 | Pending |
+| FDBK-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 ⚠️
+- Mapped to phases: 12
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-26*
-*Last updated: 2026-02-26 after initial definition*
+*Last updated: 2026-02-26 after roadmap creation*
