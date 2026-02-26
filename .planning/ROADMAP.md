@@ -84,7 +84,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Auth Fix | 1/1 | Complete | 2026-02-26 |
-| 2. Deploy + Storage | 0/2 | Planned | - |
+| 2. Deploy + Storage | 1/2 | In Progress|  |
 | 3. Banner Editing | 0/? | Not started | - |
 | 4. Per-Course Sheets | 0/? | Not started | - |
 | 5. Feedback Forms | 0/? | Not started | - |
