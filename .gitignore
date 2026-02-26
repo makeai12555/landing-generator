@@ -25,6 +25,10 @@ Thumbs.db
 # Claude local settings
 .claude/
 
+# Google Drive MCP credentials
+.gdrive-server-credentials.json
+client_secret_*.json
+
 # Generated outputs
 outputs/
 nul
