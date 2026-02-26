@@ -28,7 +28,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. An instructor submits username/password on /login and lands on /create with a valid session cookie set
   2. An unauthenticated user visiting /create or any /api/* protected route is redirected to /login
   3. An instructor clicks logout and their session cookie is cleared, then /create redirects them back to /login
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 01-01-PLAN.md — Diagnose and fix auth flow (proxy.ts wiring, HMAC bug, open redirect, error messages)
 
 ### Phase 2: Deploy + Storage
 **Goal**: The app runs on a stable production Vercel URL where all created landing pages persist across requests
@@ -78,7 +80,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Auth Fix | 0/? | Not started | - |
+| 1. Auth Fix | 0/1 | Planned | - |
 | 2. Deploy + Storage | 0/? | Not started | - |
 | 3. Banner Editing | 0/? | Not started | - |
 | 4. Per-Course Sheets | 0/? | Not started | - |
