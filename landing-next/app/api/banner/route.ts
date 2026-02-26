@@ -1,8 +1,10 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 import { GoogleGenAI } from "@google/genai";
 import { Vibrant } from "node-vibrant/node";
+import { getBaseUrl } from "@/lib/storage";
 
 // Gemini models with native image generation:
 // - gemini-2.5-flash-image: Fast, efficient (Nano Banana)
@@ -420,7 +422,7 @@ export async function POST(req: Request) {
         // Build absolute URL for server-side fetch
         const logoUrl = logo.url.startsWith("http")
           ? logo.url
-          : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${logo.url}`;
+          : `${getBaseUrl()}${logo.url}`;
 
         console.log("Fetching logo from:", logoUrl);
         const logoResponse = await fetch(logoUrl);

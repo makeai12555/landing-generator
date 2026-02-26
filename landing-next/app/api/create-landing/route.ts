@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { cookies } from "next/headers";
+import { saveLanding, saveImage, getBaseUrl } from "@/lib/storage";
+import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 interface CourseData {
   course_details?: {
@@ -72,40 +73,59 @@ export async function POST(req: Request) {
     // Get font family from branding
     const fontFamily = branding.theme?.font_family || "Heebo";
 
-    // Build landing data for Apps Script
-    const landingData = {
-      action: "createLanding",
-      id: landingId,
-      course: {
-        title: details.title || "",
-        description: details.description || "",
-        extendedDescription: landingConfig.extended_description || "",
-        schedule: details.schedule || {},
-        location: details.location || "",
-        duration: details.duration || "",
-        targetAudience: details.target_audience || "",
-      },
-      assets: {
-        backgroundUrl: assets.background_url || "",
-        bannerUrl: assets.banner_url || "",
-      },
-      theme: {
-        primary: colors.primary || "#FFD700",
-        accent: colors.accent || "#1a1a2e",
-        fontFamily,
-      },
-      form: {
-        requiresInterview: landingConfig.requires_interview || false,
-        referralOptions: landingConfig.referral_options || [
-          "חבר/ה",
-          "פייסבוק",
-          "גוגל",
-          "אחר",
-        ],
-      },
-    };
+    // Extract instructorEmail from session cookie
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+    let instructorEmail = "";
+    if (token) {
+      const session = await verifySessionToken(token);
+      if (session) instructorEmail = session.username;
+    }
 
-    // Also save locally as JSON file for fallback
+    // Create a dedicated Google Sheet for this course's registrations
+    let sheetId = "";
+    const appsScriptUrl = process.env.APPS_SCRIPT_URL;
+    if (appsScriptUrl) {
+      try {
+        console.log("Creating registration sheet for:", details.title);
+        const sheetResponse = await fetch(appsScriptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "createSheet",
+            courseTitle: details.title || "קורס חדש",
+            landingId,
+          }),
+        });
+
+        const sheetResult = await sheetResponse.json();
+        console.log("CreateSheet response:", sheetResult);
+
+        if (sheetResult.success && sheetResult.sheetId) {
+          sheetId = sheetResult.sheetId;
+          console.log(`Created sheet: ${sheetId} (${sheetResult.sheetUrl})`);
+        } else {
+          console.error("Failed to create sheet:", sheetResult);
+        }
+      } catch (error) {
+        console.error("Failed to create registration sheet:", error);
+      }
+    }
+
+    // Upload base64 banner images to Blob, get back public URLs
+    let bannerUrl = assets.banner_url || "";
+    let backgroundUrl = assets.background_url || "";
+    if (bannerUrl.startsWith("data:image/")) {
+      bannerUrl = await saveImage(`banners/${landingId}-banner.png`, bannerUrl);
+    }
+    if (backgroundUrl.startsWith("data:image/")) {
+      backgroundUrl = await saveImage(
+        `banners/${landingId}-background.png`,
+        backgroundUrl
+      );
+    }
+
+    // Build landing data with blob URLs (not base64) and instructorEmail
     const localLandingData = {
       id: landingId,
       course: {
@@ -118,14 +138,16 @@ export async function POST(req: Request) {
         targetAudience: details.target_audience || "",
       },
       assets: {
-        backgroundUrl: assets.background_url || "",
-        bannerUrl: assets.banner_url || "",
+        backgroundUrl,
+        bannerUrl,
       },
       theme: {
         primary: colors.primary || "#13ecda",
         accent: colors.accent || "#1a1a2e",
         fontFamily,
       },
+      sheetId,
+      instructorEmail,
       form: {
         requiresInterview: landingConfig.requires_interview || false,
         referralOptions: landingConfig.referral_options || [
@@ -138,44 +160,14 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    // Save to local file (fallback storage)
-    try {
-      const dataDir = join(process.cwd(), "data", "landings");
-      await mkdir(dataDir, { recursive: true });
-      const filePath = join(dataDir, `${landingId}.json`);
-      await writeFile(filePath, JSON.stringify(localLandingData, null, 2));
-      console.log(`Saved landing locally: ${filePath}`);
-    } catch (error) {
-      console.error("Failed to save landing locally:", error);
-    }
-
-    // Send to Apps Script if URL is configured
-    const appsScriptUrl = process.env.APPS_SCRIPT_URL;
-    if (appsScriptUrl) {
-      try {
-        const response = await fetch(appsScriptUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(landingData),
-        });
-
-        const result = await response.json();
-        console.log("Apps Script response:", result);
-
-        if (!result.success) {
-          console.error("Apps Script error:", result);
-        }
-      } catch (error) {
-        console.error("Failed to send to Apps Script:", error);
-      }
-    } else {
-      console.warn("APPS_SCRIPT_URL not configured, skipping Apps Script call");
-    }
+    // Save landing JSON to Vercel Blob
+    await saveLanding(landingId, localLandingData);
+    console.log(`Saved landing to Blob: ${landingId}`);
 
     console.log(`Created landing page: ${landingId}`);
 
     // Return the landing URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     return NextResponse.json({
       success: true,
       landingId,

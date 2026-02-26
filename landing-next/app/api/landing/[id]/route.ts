@@ -1,28 +1,25 @@
-import { readFile } from "fs/promises";
-import { join } from "path";
+import { getLanding } from "@/lib/storage";
 
-// GET /api/landing/[id] - Fetch from local file or Google Apps Script
+// GET /api/landing/[id] - Fetch from Vercel Blob or Google Apps Script fallback
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 
-  // First, try to load from local file (fallback storage)
-  try {
-    const filePath = join(process.cwd(), "data", "landings", `${id}.json`);
-    const fileContent = await readFile(filePath, "utf-8");
-    const landing = JSON.parse(fileContent);
-    console.log(`Loaded landing from local file: ${id}`);
+  // First, try to load from Vercel Blob
+  const landing = await getLanding(id);
+  if (landing) {
+    console.log(`Loaded landing from Blob: ${id}`);
     return Response.json(landing);
-  } catch {
-    console.log(`Landing ${id} not found locally, trying Apps Script...`);
   }
+
+  console.log(`Landing ${id} not found in Blob, trying Apps Script...`);
 
   // Fallback to Apps Script
   const base = process.env.APPS_SCRIPT_URL;
   if (!base) {
-    console.error("APPS_SCRIPT_URL missing and no local file found");
+    console.error("APPS_SCRIPT_URL missing and no Blob entry found");
     return new Response("Not Found", { status: 404 });
   }
 

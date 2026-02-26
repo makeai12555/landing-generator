@@ -3,12 +3,13 @@ import { Hero, CourseDetails, RegistrationForm } from "@/components/landing";
 import type { LandingPageData } from "@/types/landing";
 import { buildGoogleFontUrl } from "@/constants/fonts";
 import { adjustColor } from "@/lib/colors";
+import { getBaseUrl } from "@/lib/storage";
 
 // Fetch landing data from API (server-side)
 async function getLandingData(id: string): Promise<LandingPageData | null> {
   try {
     // In production, use absolute URL or environment variable
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const response = await fetch(`${baseUrl}/api/landing/${id}`, {
       cache: "no-store", // Always fetch fresh data
     });
@@ -101,7 +102,7 @@ export default async function LandingPage({
               <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm sticky top-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">הרשמה לקורס</h2>
                 <p className="text-sm text-gray-500 mb-6">מלא את הפרטים ונחזור אליך בהקדם</p>
-                <RegistrationForm landingId={data.id} form={data.form} />
+                <RegistrationForm landingId={data.id} sheetId={data.sheetId} form={data.form} />
               </div>
             </div>
           </div>
