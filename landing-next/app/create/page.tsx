@@ -1,4 +1,5 @@
 import { CourseForm } from "@/components/course";
+import { LogoutButton } from "@/components/ui/LogoutButton";
 
 export const metadata = {
   title: "יצירת קורס | CourseFlow",
@@ -29,6 +30,7 @@ export default function CreateCoursePage() {
             </div>
             <h2 className="text-xl font-bold tracking-tight">CourseFlow</h2>
           </div>
+          <LogoutButton />
         </div>
       </header>
 

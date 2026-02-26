@@ -6,6 +6,7 @@ import type { CourseData } from "@/types/course";
 import { defaultCourseData } from "@/types/course";
 import { BannerPreview } from "@/components/course";
 import { HEBREW_FONTS } from "@/constants/fonts";
+import { LogoutButton } from "@/components/ui/LogoutButton";
 
 const STORAGE_KEY = "courseData";
 
@@ -152,6 +153,7 @@ export default function LandingConfigPage() {
             </div>
             <h2 className="text-xl font-bold tracking-tight">CourseFlow</h2>
           </div>
+          <LogoutButton />
         </div>
       </header>
 

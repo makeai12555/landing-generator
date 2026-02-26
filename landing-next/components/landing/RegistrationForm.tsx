@@ -6,6 +6,7 @@ import type { LandingPageData } from "@/types/landing";
 
 interface RegistrationFormProps {
   landingId: string;
+  sheetId?: string;
   form: LandingPageData["form"];
 }
 
@@ -18,7 +19,7 @@ const DEFAULT_REFERRAL_OPTIONS = [
   "אחר",
 ];
 
-export function RegistrationForm({ landingId, form }: RegistrationFormProps) {
+export function RegistrationForm({ landingId, sheetId, form }: RegistrationFormProps) {
   const [formState, setFormState] = useState<"idle" | "submitting" | "success">("idle");
   const [referral, setReferral] = useState("");
   const [showOtherField, setShowOtherField] = useState(false);
@@ -43,6 +44,7 @@ export function RegistrationForm({ landingId, form }: RegistrationFormProps) {
     // Map field names to match Apps Script expected format
     const data = {
       landingId,
+      sheetId,
       fullName: rawData.full_name,
       phone: rawData.phone,
       email: rawData.email,
