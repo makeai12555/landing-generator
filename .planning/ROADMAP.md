@@ -56,8 +56,8 @@ Plans:
   2. The accepted refined banner is what gets submitted when creating the landing page — visitors to /l/[id] see the final version
 **Plans**: 2 plans
 Plans:
-- [ ] 03-01-PLAN.md — Backend API: /api/refine-banner POST route (Gemini inlineData editing)
-- [ ] 03-02-PLAN.md — Frontend UI: RefinementPanel on /create/config + BannerPreview overlay + human verification
+- [ ] 03-01-PLAN.md — Backend: /api/refine-banner POST route (single image + instruction via Gemini inlineData editing)
+- [ ] 03-02-PLAN.md — Frontend: Per-image refinement UI on BannerPreview + config page state (Replace/Cancel, revert, counter)
 
 ### Phase 4: Per-Course Sheets
 **Goal**: Every new course landing page automatically gets its own Google Sheet for registration tracking
