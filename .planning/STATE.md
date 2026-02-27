@@ -56,6 +56,7 @@ Recent decisions affecting current work:
 - Vercel project `courseflow-landing` connected to `makeai12555/landing-generator` (root `landing-next/`, branch master) — push to master triggers auto-deploy
 - Blob store `courseflow-landing-blob` provisioned; BLOB_READ_WRITE_TOKEN auto-injected by Vercel (Phase 2 complete)
 - Production verified: /login → 200, /create unauthenticated → redirects to /login, /l/[missing] → 404
+- CourseForm clears localStorage on mount (removeItem) — /create always starts with blank form; step-1→step-2 flow preserved via saveToStorage (quick-fix 1)
 
 ### Pending Todos
 
@@ -69,6 +70,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26
-Stopped at: Completed 02-deploy-storage/02-02-PLAN.md — Phase 2 complete, production live at courseflow-landing.vercel.app
+Last session: 2026-02-27
+Stopped at: Completed quick-fix/1 — form reset fix applied, /create always starts blank
 Resume file: None
