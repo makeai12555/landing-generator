@@ -19,7 +19,7 @@
 
 ### Banner Editing
 
-- [ ] **BNRE-01**: Instructor can type a free-text instruction to refine an existing banner (chat-style)
+- [x] **BNRE-01**: Instructor can type a free-text instruction to refine an existing banner (chat-style)
 - [ ] **BNRE-02**: Refined banner replaces the original in the landing page JSON
 
 ### Google Sheets Integration
@@ -70,7 +70,7 @@
 | DEPL-01 | Phase 2 | Complete |
 | DEPL-02 | Phase 2 | Complete |
 | DEPL-03 | Phase 2 | Complete |
-| BNRE-01 | Phase 3 | Pending |
+| BNRE-01 | Phase 3 | Complete |
 | BNRE-02 | Phase 3 | Pending |
 | SHTS-01 | Phase 4 | Pending |
 | SHTS-02 | Phase 4 | Pending |

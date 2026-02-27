@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 3 of 5 (Banner Editing)
-Plan: 0 of ? in current phase
-Status: Phase 2 complete — production deployed at courseflow-landing.vercel.app
-Last activity: 2026-02-27 - Completed quick task 2: Add download button for the banner/flyer
+Plan: 1 of 2 in current phase
+Status: Phase 3 in progress — Plan 01 complete (/api/refine-banner endpoint)
+Last activity: 2026-02-27 - Completed 03-01: /api/refine-banner POST endpoint
 
 Progress: [█████░░░░░] 50%
 
@@ -35,6 +35,7 @@ Progress: [█████░░░░░] 50%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 03-banner-editing P01 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,8 @@ Recent decisions affecting current work:
 - Blob store `courseflow-landing-blob` provisioned; BLOB_READ_WRITE_TOKEN auto-injected by Vercel (Phase 2 complete)
 - Production verified: /login → 200, /create unauthenticated → redirects to /login, /l/[missing] → 404
 - CourseForm clears localStorage on mount (removeItem) — /create always starts with blank form; step-1→step-2 flow preserved via saveToStorage (quick-fix 1)
+- [Phase 03-banner-editing]: Reused extractImageFromResponse and extractColorsFromImage verbatim from /api/banner — routes self-contained, no shared module
+- [Phase 03-banner-editing]: isBanner flag drives two prompt strategies: banner preserves Hebrew text exactly; background forbids any text
 
 ### Pending Todos
 
@@ -78,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed quick-fix/2 — download button added to BannerPreview, instructors can save banner as PNG
+Stopped at: Completed 03-01-PLAN.md — /api/refine-banner endpoint created (7159f82)
 Resume file: None
