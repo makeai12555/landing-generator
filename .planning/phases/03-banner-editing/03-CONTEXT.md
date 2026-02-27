@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Instructors can refine a generated banner after course creation using free-text Hebrew instructions. The refinement happens on the landing page itself via a floating chat UI. Both the shareable banner (with text) and the landing page background (without text) are regenerated together. The original banner can be reverted to. A download button lets instructors grab the banner for WhatsApp sharing.
+Instructors can refine a generated banner DURING course creation (on `/create/config`, Step 2) using free-text Hebrew instructions. The refinement happens before the landing page is created — the instructor perfects the banner, then submits the final version. Both the shareable banner (with text) and the landing page background (without text) are regenerated together. The original banner can be reverted to. A download button (already exists on BannerPreview) lets instructors grab the banner for WhatsApp sharing.
 
 </domain>
 
@@ -14,10 +14,10 @@ Instructors can refine a generated banner after course creation using free-text 
 ## Implementation Decisions
 
 ### Editing interface
-- Floating chat bubble on the landing page (corner icon that opens a panel)
-- Only visible to logged-in instructors — visitors see the plain landing page
+- Refinement panel on the `/create/config` page (Step 2 of course creation), below or beside the banner preview
+- Available to the instructor during course creation — before the landing page exists
 - Single input field, no conversation history — clean and simple
-- Chat panel opens on tap, instructor types a Hebrew instruction, submits
+- Instructor types a Hebrew instruction, submits, sees refined banner in the BannerPreview
 
 ### Refinement flow
 - Limited to 3-5 refinement rounds per course (exact number at Claude's discretion)
@@ -30,7 +30,7 @@ Instructors can refine a generated banner after course creation using free-text 
 - New banner shows in-place (replacing current banner visually) with floating Accept/Reject buttons
 - Instructor sees the new banner in context before committing
 - Rejections still count toward the refinement limit (each generation costs API usage)
-- On accept: banner updates immediately — visitors see the new version right away
+- On accept: banner updates in courseData (state + localStorage) — the "Create Landing Page" button submits the final version
 - Both images regenerated together (banner with text + background without text) to stay visually consistent
 
 ### Instruction guidance
@@ -39,16 +39,15 @@ Instructors can refine a generated banner after course creation using free-text 
 - No suggestion chips — placeholder examples are sufficient
 
 ### Banner download
-- Download button visible to logged-in instructors on the landing page
-- Positioned near the chat bubble (both are instructor-only UI elements)
+- Download button already exists on BannerPreview component (added in quick-2)
 - Always downloads the latest accepted banner version
 - Key use case: instructors download and share via WhatsApp
 
 ### Claude's Discretion
 - Exact refinement limit number (within 3-5 range)
-- Chat bubble positioning and animation
+- Refinement panel layout and positioning on /create/config
 - Placeholder example rotation logic
-- Download button icon and placement details
+- Download button already handled (BannerPreview)
 - Loading spinner/shimmer design
 - Accept/Reject button styling
 
