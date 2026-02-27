@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 Phase: 3 of 5 (Banner Editing)
 Plan: 0 of ? in current phase
 Status: Phase 2 complete — production deployed at courseflow-landing.vercel.app
-Last activity: 2026-02-27 - Completed quick task 1: Fix course creation form – reset all fields to empty on every open
+Last activity: 2026-02-27 - Completed quick task 2: Add download button for the banner/flyer
 
 Progress: [█████░░░░░] 50%
 
@@ -73,9 +73,10 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Fix course creation form – reset all fields to empty on every open | 2026-02-27 | a03a4e8 | [1-fix-course-creation-form-reset-all-field](./quick/1-fix-course-creation-form-reset-all-field/) |
+| 2 | Add download button for the banner/flyer | 2026-02-27 | 06b984f | [2-add-download-button-for-the-banner-flyer](./quick/2-add-download-button-for-the-banner-flyer/) |
 
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed quick-fix/1 — form reset fix applied, /create always starts blank
+Stopped at: Completed quick-fix/2 — download button added to BannerPreview, instructors can save banner as PNG
 Resume file: None
