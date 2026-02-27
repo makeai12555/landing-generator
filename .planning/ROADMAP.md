@@ -54,7 +54,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. After creating a course, an instructor types a Hebrew instruction (e.g. "make the background darker") and a new banner is generated
   2. The refined banner replaces the original in the landing page — visitors to /l/[id] see the updated version
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 03-01-PLAN.md — Backend API: /api/refine-banner POST route + PATCH /api/landing/[id] + type update
+- [ ] 03-02-PLAN.md — Frontend UI: RefinementPanel component + landing page instructor detection + human verification
 
 ### Phase 4: Per-Course Sheets
 **Goal**: Every new course landing page automatically gets its own Google Sheet for registration tracking
