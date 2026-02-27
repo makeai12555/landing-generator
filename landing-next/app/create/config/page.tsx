@@ -9,6 +9,8 @@ import { HEBREW_FONTS } from "@/constants/fonts";
 import { LogoutButton } from "@/components/ui/LogoutButton";
 
 const STORAGE_KEY = "courseData";
+const ORIGINALS_KEY = "courseDataOriginals";
+const MAX_REFINEMENTS = 4;
 
 export default function LandingConfigPage() {
   const router = useRouter();
@@ -17,6 +19,14 @@ export default function LandingConfigPage() {
   const [requiresInterview, setRequiresInterview] = useState(false);
   const [fontFamily, setFontFamily] = useState("Heebo");
   const [isCreating, setIsCreating] = useState(false);
+
+  // Refinement state
+  const [bannerRefinementsLeft, setBannerRefinementsLeft] = useState(MAX_REFINEMENTS);
+  const [backgroundRefinementsLeft, setBackgroundRefinementsLeft] = useState(MAX_REFINEMENTS);
+  const [originals, setOriginals] = useState<{
+    banner_url?: string;
+    background_url?: string;
+  } | null>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -40,6 +50,19 @@ export default function LandingConfigPage() {
       // Load font family if exists
       if (data.branding?.theme?.font_family) {
         setFontFamily(data.branding.theme.font_family);
+      }
+
+      // Store originals on first visit (for revert functionality)
+      const existingOriginals = localStorage.getItem(ORIGINALS_KEY);
+      if (!existingOriginals) {
+        const originalsData = {
+          banner_url: data.generated_assets?.banner_url,
+          background_url: data.generated_assets?.background_url,
+        };
+        localStorage.setItem(ORIGINALS_KEY, JSON.stringify(originalsData));
+        setOriginals(originalsData);
+      } else {
+        setOriginals(JSON.parse(existingOriginals));
       }
     } catch (e) {
       console.error("Failed to parse saved course data:", e);
@@ -68,6 +91,95 @@ export default function LandingConfigPage() {
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     setCourseData(updated);
+  };
+
+  // Callback: replace banner with refined image + update colors
+  const handleBannerReplace = (
+    newDataUri: string,
+    colors: { primary: string; accent: string }
+  ) => {
+    if (!courseData) return;
+
+    const updated: CourseData = {
+      ...courseData,
+      generated_assets: {
+        ...courseData.generated_assets,
+        banner_url: newDataUri,
+      },
+      branding: {
+        ...courseData.branding,
+        theme: {
+          ...courseData.branding.theme,
+          colors: {
+            ...courseData.branding.theme.colors,
+            primary: colors.primary,
+            accent: colors.accent,
+          },
+        },
+      },
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setCourseData(updated);
+    setBannerRefinementsLeft((n) => Math.max(0, n - 1));
+  };
+
+  // Callback: replace background with refined image
+  const handleBackgroundReplace = (newDataUri: string) => {
+    if (!courseData) return;
+
+    const updated: CourseData = {
+      ...courseData,
+      generated_assets: {
+        ...courseData.generated_assets,
+        background_url: newDataUri,
+      },
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setCourseData(updated);
+    setBackgroundRefinementsLeft((n) => Math.max(0, n - 1));
+  };
+
+  // Callback: revert banner to original (does not reset counter)
+  const handleBannerRevert = () => {
+    if (!courseData || !originals?.banner_url) return;
+
+    const updated: CourseData = {
+      ...courseData,
+      generated_assets: {
+        ...courseData.generated_assets,
+        banner_url: originals.banner_url,
+      },
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setCourseData(updated);
+  };
+
+  // Callback: revert background to original (does not reset counter)
+  const handleBackgroundRevert = () => {
+    if (!courseData || !originals?.background_url) return;
+
+    const updated: CourseData = {
+      ...courseData,
+      generated_assets: {
+        ...courseData.generated_assets,
+        background_url: originals.background_url,
+      },
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setCourseData(updated);
+  };
+
+  // Callback: generation happened but was cancelled — still decrements counter
+  const handleRefinementUsed = (type: "banner" | "background") => {
+    if (type === "banner") {
+      setBannerRefinementsLeft((n) => Math.max(0, n - 1));
+    } else {
+      setBackgroundRefinementsLeft((n) => Math.max(0, n - 1));
+    }
   };
 
   const createLandingPage = async () => {
@@ -107,6 +219,9 @@ export default function LandingConfigPage() {
 
       // Save landing page ID
       localStorage.setItem("landingPageId", result.landingId);
+
+      // Clean up originals — no longer needed after landing is created
+      localStorage.removeItem(ORIGINALS_KEY);
 
       // Navigate to landing page
       router.push(`/l/${result.landingId}`);
@@ -384,6 +499,15 @@ export default function LandingConfigPage() {
             <BannerPreview
               bannerUrl={assets?.banner_url}
               backgroundUrl={assets?.background_url}
+              onBannerReplace={handleBannerReplace}
+              onBackgroundReplace={handleBackgroundReplace}
+              bannerRefinementsLeft={bannerRefinementsLeft}
+              backgroundRefinementsLeft={backgroundRefinementsLeft}
+              originalBannerUrl={originals?.banner_url}
+              originalBackgroundUrl={originals?.background_url}
+              onBannerRevert={handleBannerRevert}
+              onBackgroundRevert={handleBackgroundRevert}
+              onRefinementUsed={handleRefinementUsed}
             />
           </div>
         </div>
