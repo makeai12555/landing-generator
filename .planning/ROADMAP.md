@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Auth Fix** - Diagnose and fix the broken login/session/route-protection flow
 - [x] **Phase 2: Deploy + Storage** - Migrate storage off the filesystem and ship to production Vercel
-- [ ] **Phase 3: Banner Editing** - Add chat-style banner refinement after course creation
+- [x] **Phase 3: Banner Editing** - Add chat-style banner refinement after course creation (completed 2026-02-27)
 - [ ] **Phase 4: Per-Course Sheets** - Wire Apps Script to auto-create a Google Sheet per course
 - [ ] **Phase 5: Feedback Forms** - Let instructors trigger a Google Form feedback at course end
 
@@ -88,6 +88,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Auth Fix | 1/1 | Complete | 2026-02-26 |
 | 2. Deploy + Storage | 2/2 | Complete | 2026-02-26 |
-| 3. Banner Editing | 0/? | Not started | - |
+| 3. Banner Editing | 2/2 | Complete   | 2026-02-27 |
 | 4. Per-Course Sheets | 0/? | Not started | - |
 | 5. Feedback Forms | 0/? | Not started | - |

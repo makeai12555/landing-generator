@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 3 of 5 (Banner Editing)
-Plan: 1 of 2 in current phase
-Status: Phase 3 in progress — Plan 01 complete (/api/refine-banner endpoint)
-Last activity: 2026-02-27 - Completed 03-01: /api/refine-banner POST endpoint
+Plan: 2 of 2 in current phase — awaiting checkpoint:human-verify (Task 2)
+Status: Phase 3 in progress — Plan 02 Task 1 complete (refinement UI), checkpoint pending
+Last activity: 2026-02-27 - Completed 03-02 Task 1: per-image refinement UI on /create/config
 
-Progress: [█████░░░░░] 50%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -36,6 +36,7 @@ Progress: [█████░░░░░] 50%
 
 *Updated after each plan completion*
 | Phase 03-banner-editing P01 | 2 | 1 tasks | 1 files |
+| Phase 03-banner-editing P02 | 3 | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,8 @@ Recent decisions affecting current work:
 - CourseForm clears localStorage on mount (removeItem) — /create always starts with blank form; step-1→step-2 flow preserved via saveToStorage (quick-fix 1)
 - [Phase 03-banner-editing]: Reused extractImageFromResponse and extractColorsFromImage verbatim from /api/banner — routes self-contained, no shared module
 - [Phase 03-banner-editing]: isBanner flag drives two prompt strategies: banner preserves Hebrew text exactly; background forbids any text
+- [Phase 03-banner-editing]: Counter decrements on both Replace AND Cancel — API call already incurred the Gemini cost
+- [Phase 03-banner-editing]: Originals backup stored in localStorage (ORIGINALS_KEY) on first /create/config visit — survives page refresh
 
 ### Pending Todos
 
@@ -81,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 03-01-PLAN.md — /api/refine-banner endpoint created (7159f82)
+Stopped at: 03-02-PLAN.md checkpoint:human-verify (Task 2) — refinement UI complete, awaiting manual end-to-end test
 Resume file: None
