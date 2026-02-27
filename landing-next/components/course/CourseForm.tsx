@@ -17,17 +17,9 @@ export function CourseForm() {
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Load from localStorage on mount
+  // Always start fresh - clear any leftover data from a previous course creation
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setCourseData({ ...defaultCourseData, ...parsed });
-      } catch (e) {
-        console.error("Failed to parse saved course data:", e);
-      }
-    }
+    localStorage.removeItem(STORAGE_KEY);
     setIsMounted(true);
   }, []);
 
