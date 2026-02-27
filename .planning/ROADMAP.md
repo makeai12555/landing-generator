@@ -48,16 +48,16 @@ Plans:
 - [x] 02-02-PLAN.md — Deploy to Vercel production, configure env vars and Blob store, verify end-to-end
 
 ### Phase 3: Banner Editing
-**Goal**: Instructors can refine a generated banner after creation using a free-text Hebrew instruction
+**Goal**: Instructors can refine a generated banner before landing page creation using a free-text Hebrew instruction on /create/config
 **Depends on**: Phase 2
 **Requirements**: BNRE-01, BNRE-02
 **Success Criteria** (what must be TRUE):
-  1. After creating a course, an instructor types a Hebrew instruction (e.g. "make the background darker") and a new banner is generated
-  2. The refined banner replaces the original in the landing page — visitors to /l/[id] see the updated version
+  1. On /create/config, an instructor types a Hebrew instruction (e.g. "make the background darker") and a refined banner is generated
+  2. The accepted refined banner is what gets submitted when creating the landing page — visitors to /l/[id] see the final version
 **Plans**: 2 plans
 Plans:
-- [ ] 03-01-PLAN.md — Backend API: /api/refine-banner POST route + PATCH /api/landing/[id] + type update
-- [ ] 03-02-PLAN.md — Frontend UI: RefinementPanel component + landing page instructor detection + human verification
+- [ ] 03-01-PLAN.md — Backend API: /api/refine-banner POST route (Gemini inlineData editing)
+- [ ] 03-02-PLAN.md — Frontend UI: RefinementPanel on /create/config + BannerPreview overlay + human verification
 
 ### Phase 4: Per-Course Sheets
 **Goal**: Every new course landing page automatically gets its own Google Sheet for registration tracking
