@@ -80,9 +80,10 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 1 | Fix course creation form – reset all fields to empty on every open | 2026-02-27 | a03a4e8 | [1-fix-course-creation-form-reset-all-field](./quick/1-fix-course-creation-form-reset-all-field/) |
 | 2 | Add download button for the banner/flyer | 2026-02-27 | 06b984f | [2-add-download-button-for-the-banner-flyer](./quick/2-add-download-button-for-the-banner-flyer/) |
+| 3 | Fix download banner button — always downloaded original instead of current preview | 2026-03-07 | 46fbc22 | [3-fix-download-banner-button-always-downlo](./quick/3-fix-download-banner-button-always-downlo/) |
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: 03-02-PLAN.md checkpoint:human-verify (Task 2) — refinement UI complete, awaiting manual end-to-end test
+Last session: 2026-03-07
+Stopped at: Quick task 3 complete — download button now uses displayBannerUrl
 Resume file: None
