@@ -91,17 +91,20 @@ export function BannerPreview({
     return () => clearTimeout(timeout);
   }, []);
 
-  const handleDownload = async () => {
-    if (!bannerUrl) return;
+  // Current display URL for banner (preview takes priority)
+  const displayBannerUrl = bannerPreview || bannerUrl;
 
-    if (bannerUrl.startsWith("data:")) {
+  const handleDownload = async () => {
+    if (!displayBannerUrl) return;
+
+    if (displayBannerUrl.startsWith("data:")) {
       const a = document.createElement("a");
-      a.href = bannerUrl;
+      a.href = displayBannerUrl;
       a.download = "banner.png";
       a.click();
     } else {
       try {
-        const response = await fetch(bannerUrl);
+        const response = await fetch(displayBannerUrl);
         const blob = await response.blob();
         const objectUrl = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -200,8 +203,6 @@ export function BannerPreview({
     onRefinementUsed?.("background");
   };
 
-  // Current display URL for banner (preview takes priority)
-  const displayBannerUrl = bannerPreview || bannerUrl;
   // Current display URL for background (preview takes priority)
   const displayBackgroundUrl = backgroundPreview || backgroundUrl || bannerUrl;
 
@@ -245,8 +246,8 @@ export function BannerPreview({
           )}
         </div>
 
-        {/* Download button — always shows current (non-preview) banner */}
-        {!isLoading && bannerUrl && (
+        {/* Download button — shows current displayed banner (preview or committed) */}
+        {!isLoading && displayBannerUrl && (
           <button
             type="button"
             onClick={handleDownload}
