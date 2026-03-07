@@ -1,24 +1,18 @@
 # Phase 3: Banner Editing - Context
 
 **Gathered:** 2026-02-26
-**Updated:** 2026-02-27 (independent refinement clarification)
 **Status:** Ready for planning
 
 <domain>
 ## Phase Boundary
 
-Two-phase image system:
-
-**Phase A — Initial generation (already implemented, DO NOT CHANGE):**
-Form → single generation prompt → produces both images together:
-- Course Banner (with Hebrew text baked in) — for sharing via WhatsApp
-- Landing Page Background (same visual concept, no text) — for Hero section
-Both created together to ensure style consistency. If the instructor changes form values and regenerates, both images regenerate together again.
-
-**Phase B — Refinement (NEW — this phase):**
-After initial generation is complete and both images exist, the instructor can refine EACH IMAGE INDEPENDENTLY using a short Hebrew instruction. Refinement of one image does NOT regenerate the other. This happens on `/create/config` (Step 2), before the landing page is created.
-
-A download button (already exists on BannerPreview) lets instructors grab the banner for WhatsApp sharing.
+Instructors can refine the generated images for the course using free-text Hebrew instructions during the course creation flow, before the landing page is deployed.
+The editing happens directly in the creation interface, next to the image previews for:
+the course banner (shareable image with text), and
+the landing page background (hero image without text).
+Each image can be refined independently using a simple free-text input.
+Edits are intentionally light and stylistically constrained in order to preserve the visual design language of the system.
+A download button allows instructors to download the banner image for sharing (for example via WhatsApp)
 
 </domain>
 
@@ -26,56 +20,70 @@ A download button (already exists on BannerPreview) lets instructors grab the ba
 ## Implementation Decisions
 
 ### Editing interface
-- Refinement UI on the `/create/config` page (Step 2 of course creation), near each image preview
-- Available to the instructor during course creation — before the landing page exists
-- Each image has its own refinement input — instructor picks which image to edit
-- Single input field per image, no conversation history — clean and simple
-- Instructor types a short Hebrew instruction, submits, sees preview for that specific image
-
-### Independent refinement (CRITICAL)
-- Banner and background are refined INDEPENDENTLY — editing one does NOT affect the other
-- Each image has its own refine flow: write instruction → see preview → replace or cancel
-- The API endpoint accepts ONE image + instruction and returns ONE refined image
-- This is fundamentally different from Phase A (initial generation) which produces both images together
+-The editing interface appears in the course creation screen, next to the image previews for:
+-Course Banner
+-Landing Page Background Image
+-Each image has its own small free-text input field for refinement.
+-The instructor writes a short Hebrew instruction (for example:
+"תכהה קצת את הרקע" or "תוסיף מעט צבע כחול"), and submits it.
+-The system regenerates the image using the original generation prompt plus the refinement instruction.
+-After generation, the instructor sees a preview of the newly generated image and can decide whether to replace the current image.
+-If accepted, the new image replaces the existing one. If rejected, the original image remains unchanged.
+-There is no conversation history and no chat UI — just a single input field for each image.
+-The editing controls are visible only to logged-in instructors during course creation.
+-Visitors to the landing page never see these controls.
 
 ### Refinement flow
-- Limited to 3-5 refinement rounds per image (exact number at Claude's discretion)
-- Show remaining refinements count to the instructor per image
-- "Revert to original" available — restores the image from Phase A (initial generation)
-- Reverting does NOT reset the refinement counter
-- Loading spinner overlay on the image area while Gemini generates
+- Limited to 3-5 refinement rounds per course (exact number at Claude's discretion)
+- Show remaining refinements count to the instructor
+- "Revert to original" button available — restores the first generated banner
+- Reverting does NOT reset the refinement counter — total generations count toward the limit
+- Loading spinner overlay on the banner area while Gemini generates
 
 ### Preview & replacement
-- New image shows as preview — instructor sees it before committing
-- Two actions: **Replace image** (accept the new version) or **Cancel** (discard preview, keep previous)
-- Cancelled refinements still count toward the limit (each generation costs API usage)
-- On replace: image updates in courseData (state + localStorage) — the "Create Landing Page" button submits the final versions
+-When a refinement is generated, the new image preview temporarily replaces the current image in the preview area so the instructor can see it in context.
+-Two simple actions appear near the preview:
+-Replace image — confirms the change and saves the new image as the current image.
+-Cancel — discards the preview and restores the previous image.
+-The replacement happens immediately after confirmation, updating the stored image URL for the course.
+-This preview-and-confirm pattern keeps the editing process safe while allowing instructors to experiment with small visual refinements.
+-The preview and replacement process works independently for each image:
+-Course Banner
+-Landing Page Background Image
+-Images are not regenerated together. Each image is refined separately so instructors can adjust only the element they want to change.
 
 ### Instruction guidance
-- Rotating placeholder text in the input field with Hebrew examples (e.g. "תכהה קצת את הרקע", "תוסיף מעט צבע כחול")
+- Rotating placeholder text in the input field with Hebrew examples (e.g. "תעשה את הרקע כהה יותר")
 - No additional guidance text or tooltip — keep it minimal
 - No suggestion chips — placeholder examples are sufficient
 
 ### Banner download
-- Download button already exists on BannerPreview component (added in quick-2)
-- Always downloads the latest accepted banner version
-- Key use case: instructors download and share via WhatsApp
+- A Download Banner button is available next to the banner preview in the course creation interface.
+- The button downloads exactly the banner image currently shown in the preview.
+- If the instructor has generated a preview but has not accepted it yet, the download still reflects the image currently visible on screen.
+- The button downloads exactly the banner image currently shown in the preview.
+-Once a new banner is accepted, the download will naturally return that updated version
+-Primary use case: instructors download the banner and share it through channels like WhatsApp or social media.
 
 ### Claude's Discretion
-- Exact refinement limit number per image (within 3-5 range)
-- Refinement UI layout and positioning on /create/config
+- Exact refinement limit number (within 3-5 range)
+- Chat bubble positioning and animation
 - Placeholder example rotation logic
 - Loading spinner/shimmer design
-- Replace/Cancel button styling
+- Accept/Reject button styling
 
 </decisions>
-
+ 
 <specifics>
 ## Specific Ideas
 
 - Instructors download the banner to their phone and share it via WhatsApp — this is the primary distribution channel
-- Phase A (initial generation) creates both images together from the same prompt — this ensures visual consistency and must remain unchanged
-- Phase B (refinement) edits images independently — the instructor may want to darken only the background, or tweak only the banner text styling, without affecting the other image
+- The system initially generates two images from the same generation JSON/prompt:
+Course Banner – a shareable image with Hebrew text baked into the image.
+Landing Page Background Image – the same visual concept but without text, used as the hero background on the landing page.
+Both images originate from the same base prompt and visual concept to keep the course branding consistent.
+After the initial generation, each image can be refined independently using its own free‑text refinement input.
+Refining the banner does not automatically regenerate the landing background image, and refining the background does not regenerate the banner. regenerate both to keep them consistent.
 - Keep the editing UI minimal — these are instructors, not designers. Simple input, clear feedback.
 
 </specifics>
@@ -91,4 +99,3 @@ None — discussion stayed within phase scope
 
 *Phase: 03-banner-editing*
 *Context gathered: 2026-02-26*
-*Updated: 2026-02-27*

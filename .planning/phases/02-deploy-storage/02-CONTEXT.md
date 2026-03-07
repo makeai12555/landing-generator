@@ -37,6 +37,7 @@ Migrate file-based JSON storage to Vercel Blob and deploy the app to production 
 <specifics>
 ## Specific Ideas
 
+- Vercel project `courseflow-landing` is currently connected to the wrong GitHub repo (`makeai12555/courseflow-landing`). The correct repo is `makeai12555/landing-generator` (branch: `master`). Reconnecting Vercel to the correct repo must be the first step in this phase.
 - All services are on the organization account `makeai12555@gmail.com` — Vercel, GitHub, Google Sheets
 - Vercel team is `makeai12555s-projects` (ID: `team_fV9hFBKyNKPZ78grlw5KIAeO`)
 - The app currently redirects to `/login` when unauthenticated — this should work the same in production
