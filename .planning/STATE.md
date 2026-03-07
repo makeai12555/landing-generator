@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 Phase: 3 of 5 (Banner Editing)
 Plan: 2 of 2 in current phase — awaiting checkpoint:human-verify (Task 2)
 Status: Phase 3 in progress — Plan 02 Task 1 complete (refinement UI), checkpoint pending
-Last activity: 2026-02-27 - Completed 03-02 Task 1: per-image refinement UI on /create/config
+Last activity: 2026-03-07 - Completed quick task 3: Fix download banner button always downloads the original banner instead of the refined version
 
 Progress: [████████░░] 80%
 
