@@ -42,3 +42,6 @@ next-env.d.ts
 
 # generated landing page data
 /data/landings/
+
+# Google service account keys
+gen-lang-client-*.json

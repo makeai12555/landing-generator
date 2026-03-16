@@ -32,8 +32,9 @@ export interface LandingPageData {
     fontFamily?: string; // e.g., "Heebo"
   };
 
-  // Google Sheet ID for registrations (each course gets its own sheet)
+  // Google Sheet for registrations (each course gets its own sheet)
   sheetId?: string;
+  sheetUrl?: string;
 
   // Instructor email captured from session at creation time (used in Phase 5 for notifications)
   instructorEmail?: string;

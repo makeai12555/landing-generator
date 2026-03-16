@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { saveLanding, saveImage, getBaseUrl } from "@/lib/storage";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { createCourseSheet, logCourseToAdminSheet } from "@/lib/sheets";
 
 interface CourseData {
   course_details?: {
@@ -84,32 +85,19 @@ export async function POST(req: Request) {
 
     // Create a dedicated Google Sheet for this course's registrations
     let sheetId = "";
-    const appsScriptUrl = process.env.APPS_SCRIPT_URL;
-    if (appsScriptUrl) {
-      try {
-        console.log("Creating registration sheet for:", details.title);
-        const sheetResponse = await fetch(appsScriptUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "createSheet",
-            courseTitle: details.title || "קורס חדש",
-            landingId,
-          }),
-        });
-
-        const sheetResult = await sheetResponse.json();
-        console.log("CreateSheet response:", sheetResult);
-
-        if (sheetResult.success && sheetResult.sheetId) {
-          sheetId = sheetResult.sheetId;
-          console.log(`Created sheet: ${sheetId} (${sheetResult.sheetUrl})`);
-        } else {
-          console.error("Failed to create sheet:", sheetResult);
-        }
-      } catch (error) {
-        console.error("Failed to create registration sheet:", error);
-      }
+    let sheetUrl = "";
+    try {
+      console.log("Creating registration sheet for:", details.title);
+      const sheetResult = await createCourseSheet(
+        details.title || "קורס חדש",
+        landingId,
+        instructorEmail
+      );
+      sheetId = sheetResult.sheetId;
+      sheetUrl = sheetResult.sheetUrl;
+      console.log(`Created sheet: ${sheetId} (${sheetUrl})`);
+    } catch (error) {
+      console.error("Failed to create registration sheet:", error);
     }
 
     // Upload base64 banner images to Blob, get back public URLs
@@ -147,6 +135,7 @@ export async function POST(req: Request) {
         fontFamily,
       },
       sheetId,
+      sheetUrl,
       instructorEmail,
       form: {
         requiresInterview: landingConfig.requires_interview || false,
@@ -166,12 +155,28 @@ export async function POST(req: Request) {
 
     console.log(`Created landing page: ${landingId}`);
 
-    // Return the landing URL
+    // Log course details to admin master sheet
     const baseUrl = getBaseUrl();
+    try {
+      await logCourseToAdminSheet({
+        title: details.title || "",
+        description: details.description || "",
+        instructorEmail,
+        dates: details.schedule?.dates,
+        location: details.location,
+        duration: details.duration,
+        targetAudience: details.target_audience,
+        landingUrl: `${baseUrl}/l/${landingId}`,
+        sheetUrl,
+      });
+    } catch (error) {
+      console.error("Failed to log course to admin sheet:", error);
+    }
     return NextResponse.json({
       success: true,
       landingId,
       url: `${baseUrl}/l/${landingId}`,
+      sheetUrl,
     });
   } catch (error) {
     console.error("Error creating landing page:", error);

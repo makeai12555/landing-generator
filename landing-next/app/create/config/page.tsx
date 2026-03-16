@@ -19,6 +19,11 @@ export default function LandingConfigPage() {
   const [requiresInterview, setRequiresInterview] = useState(false);
   const [fontFamily, setFontFamily] = useState("Heebo");
   const [isCreating, setIsCreating] = useState(false);
+  const [createdResult, setCreatedResult] = useState<{
+    landingId: string;
+    url: string;
+    sheetUrl?: string;
+  } | null>(null);
 
   // Refinement state
   const [bannerRefinementsLeft, setBannerRefinementsLeft] = useState(MAX_REFINEMENTS);
@@ -223,8 +228,12 @@ export default function LandingConfigPage() {
       // Clean up originals — no longer needed after landing is created
       localStorage.removeItem(ORIGINALS_KEY);
 
-      // Navigate to landing page
-      router.push(`/l/${result.landingId}`);
+      // Show success with links
+      setCreatedResult({
+        landingId: result.landingId,
+        url: result.url,
+        sheetUrl: result.sheetUrl,
+      });
     } catch (error) {
       console.error("Error creating landing page:", error);
       alert(
@@ -233,6 +242,72 @@ export default function LandingConfigPage() {
       setIsCreating(false);
     }
   };
+
+  // Success screen — show links after creation
+  if (createdResult) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-lg w-full text-center space-y-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-green-600 text-3xl">check_circle</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">דף הנחיתה נוצר בהצלחה!</h2>
+
+          <div className="space-y-4 text-right">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-sm font-semibold text-gray-700 mb-2">קישור לדף הנחיתה:</p>
+              <a
+                href={createdResult.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline text-sm break-all"
+              >
+                {createdResult.url}
+              </a>
+            </div>
+
+            {createdResult.sheetUrl && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">גיליון נרשמים (Google Sheets):</p>
+                <a
+                  href={createdResult.sheetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline text-sm break-all"
+                >
+                  {createdResult.sheetUrl}
+                </a>
+                <p className="text-xs text-gray-400 mt-2">
+                  כל מי שיירשם דרך דף הנחיתה יופיע כאן אוטומטית
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <a
+              href={createdResult.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 h-12 bg-primary hover:opacity-90 text-gray-900 font-bold rounded-lg transition-all"
+            >
+              <span>צפה בדף הנחיתה</span>
+              <span className="material-symbols-outlined text-sm">open_in_new</span>
+            </a>
+            <button
+              onClick={() => {
+                localStorage.removeItem(STORAGE_KEY);
+                router.push("/create");
+              }}
+              className="flex-1 h-12 rounded-lg border border-gray-200 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+            >
+              צור קורס חדש
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!courseData) {
     return (
