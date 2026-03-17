@@ -49,6 +49,25 @@ export async function createCourseSheet(
   }
 
   console.log(`Created course sheet: ${result.sheetId} for "${courseTitle}"`);
+
+  // Add header row with placement columns
+  try {
+    const auth = getAuth();
+    const sheets = google.sheets({ version: "v4", auth });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: result.sheetId,
+      range: "נרשמים!A1:H1",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [
+          ["תאריך", "שם מלא", "טלפון", "אימייל", "מאיפה שמעת", "הערות", "הושם (כן/לא)", "הושם לאן"],
+        ],
+      },
+    });
+  } catch (e) {
+    console.error("Failed to set registration sheet headers:", e);
+  }
+
   return { sheetId: result.sheetId, sheetUrl: result.sheetUrl };
 }
 
@@ -72,12 +91,12 @@ export async function addRegistration(
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: "נרשמים!A:F",
+    range: "נרשמים!A:H",
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: {
       values: [
-        [now, data.fullName, data.phone, data.email, data.referral, data.notes || ""],
+        [now, data.fullName, data.phone, data.email, data.referral, data.notes || "", "", ""],
       ],
     },
   });
@@ -118,7 +137,7 @@ export async function logCourseToAdminSheet(courseData: {
   if (!existing.data.values || existing.data.values.length === 0) {
     await sheets.spreadsheets.values.update({
       spreadsheetId: adminSheetId,
-      range: "A1:J1",
+      range: "A1:L1",
       valueInputOption: "RAW",
       requestBody: {
         values: [
@@ -133,6 +152,8 @@ export async function logCourseToAdminSheet(courseData: {
             "קהל יעד",
             "דף נחיתה",
             "שיטס נרשמים",
+            "טופס נשלח",
+            "מייל מעקב נשלח",
           ],
         ],
       },
